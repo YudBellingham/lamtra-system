@@ -57,10 +57,19 @@
   text-transform: uppercase;
   white-space: nowrap;
   transition: color 0.25s ease;
+  text-decoration: none;
 }
 
 .nav-item:hover {
   color: #fec8dc;
+}
+
+.nav-item.active {
+  color: #d8ef75;
+}
+
+.mobile-link.active {
+  color: #d8ef75;
 }
 
 .header-center {
@@ -90,11 +99,17 @@
   animation: fadeDown 0.25s ease;
 }
 
-.mobile-menu span {
+.mobile-menu span,
+.mobile-menu a {
   font-size: 18px;
   font-weight: 600;
   color: #ffffff;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.lamtra-header a {
+  text-decoration: none;
 }
 
 @keyframes fadeDown {
