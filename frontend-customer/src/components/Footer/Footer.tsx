@@ -20,18 +20,18 @@ function Footer() {
         <div className="footer-center">
           <div className="footer-menu">
             <div className="footer-row top">
-              <span>SẢN PHẨM</span>
-              <span>CƠ SỞ</span>
-              <span>TIN TỨC</span>
+              <Link to="/ve-lamtra">VỀ LAMTRA</Link>
+              <Link to="/tin-tuc">TIN TỨC</Link>
+              <Link to="/tuyen-dung">TUYỂN DỤNG</Link>
             </div>
 
             <div className="footer-row bottom">
-              <span>TUYỂN DỤNG</span>
-              <span>FEEDBACKS</span>
+              <Link to="/cua-hang">CỬA HÀNG</Link>
+              <Link to="/san-pham">SẢN PHẨM</Link>
+              <Link to="/feedbacks">FEEDBACKS</Link>
             </div>
           </div>
         </div>
-
 
         <div className="footer-right">
           <div className="contact-title">Liên hệ nhà Lam</div>

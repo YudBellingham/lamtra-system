@@ -58,21 +58,29 @@
   gap: 36px;
 }
 
-.footer-menu span {
+.footer-menu span,
+.footer-menu a {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.6px;
   color: #ffffff;
   cursor: pointer;
+  text-decoration: none;
 
   transition:
     color 0.2s ease,
     transform 0.2s ease;
 }
 
-.footer-menu span:hover {
+.footer-menu span:hover,
+.footer-menu a:hover {
   color: #ffd6e6;
   transform: translateY(-3px) scale(1.08);
+}
+
+.lamtra-footer a {
+  text-decoration: none;
+  color: inherit;
 }
 
 .footer-right {
