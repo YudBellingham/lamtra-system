@@ -1,6 +1,8 @@
 import "./Footer.css";
 import logo from "../../assets/lamtra-logo.png";
 import { Link } from "react-router-dom";
+import { FaFacebookF } from "react-icons/fa";
+import { FiPhoneCall } from "react-icons/fi";
 
 function Footer() {
   return (
@@ -16,34 +18,36 @@ function Footer() {
         </div>
 
         <div className="footer-center">
-          <nav className="footer-nav">
-            <div className="col">
-              <Link to="/">Trang Chủ</Link>
-              <Link to="/san-pham">Sản Phẩm</Link>
-              <Link to="/tin-tuc">Tin Tức</Link>
+          <div className="footer-menu">
+            <div className="footer-row top">
+              <span>SẢN PHẨM</span>
+              <span>CƠ SỞ</span>
+              <span>TIN TỨC</span>
             </div>
-            <div className="col">
-              <Link to="/co-so">Cơ Sở</Link>
-              <Link to="/tuyen-dung">Tuyển dụng</Link>
-              <Link to="/feedback">Feedback</Link>
+
+            <div className="footer-row bottom">
+              <span>TUYỂN DỤNG</span>
+              <span>FEEDBACKS</span>
             </div>
-          </nav>
+          </div>
         </div>
+
 
         <div className="footer-right">
           <div className="contact-title">Liên hệ nhà Lam</div>
+
           <div className="socials">
-            <a href="#" aria-label="phone">
-              📞
+            <a href="tel:0909123456" className="social-icon phone">
+              <FiPhoneCall />
             </a>
-            <a href="#" aria-label="google">
-              G
-            </a>
-            <a href="#" aria-label="facebook">
-              f
-            </a>
-            <a href="#" aria-label="tiktok">
-              ♪
+
+            <a
+              href="https://www.facebook.com/trasualamtra"
+              className="social-icon facebook"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FaFacebookF />
             </a>
           </div>
         </div>
