@@ -13,7 +13,7 @@ function Footer() {
             <img src={logo} alt="Lam Trà" />
           </Link>
           <div className="copyright">
-            © 20000000 | LAM TRA | ALL RIGHTS RESERVED
+            © 2026 | LAM TRA | ALL RIGHTS RESERVED
           </div>
         </div>
 
