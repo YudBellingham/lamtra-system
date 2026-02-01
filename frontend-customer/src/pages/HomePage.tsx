@@ -5,7 +5,7 @@ const HomePage: React.FC = () => {
     <main style={{ padding: "40px" }}>
       <h1>Chào mừng đến với Lamtra ☕</h1>
       <p>
-        Hệ thống đặt trà sữa trực tuyến — nhanh chóng, tiện lợi và hiện đại.
+        Hệ thống đặt trà sữa trực tuyến — nhanh chóng, tiện lợi và hiện đại của nhóm 13.
       </p>
 
       <div
