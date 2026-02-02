@@ -1,7 +1,13 @@
 .lamtra-footer {
-  background: #f7a9bf;
+  background: linear-gradient(
+    to bottom,
+    #f5d5e0 0%,
+    #ff8fa3 40%, 
+    #ff8fa3 100%
+  );
   color: #ffffff;
   font-family: "Poppins", sans-serif;
+  padding: 60px 20px 32px 20px;
 }
 
 .footer-container {
