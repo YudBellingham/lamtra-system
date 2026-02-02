@@ -42,20 +42,20 @@
 }
 
 .footer-menu {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  column-gap: 80px;
+  row-gap: 12px;
+  justify-content: center;
   align-items: center;
-  gap: 14px;
 }
 
 .footer-row.top {
-  display: flex;
-  gap: 42px;
+  display: contents;
 }
 
 .footer-row.bottom {
-  display: flex;
-  gap: 36px;
+  display: contents;
 }
 
 .footer-menu span,
@@ -66,6 +66,8 @@
   color: #ffffff;
   cursor: pointer;
   text-decoration: none;
+  display: inline-block;
+  white-space: nowrap;
 
   transition:
     color 0.2s ease,
@@ -150,15 +152,13 @@
     align-items: center;
   }
 
-  .footer-row.top {
-    gap: 24px;
+  .footer-menu {
+    column-gap: 40px;
+    row-gap: 10px;
   }
 
-  .footer-row.bottom {
-    gap: 20px;
-  }
-
-  .footer-menu span {
+  .footer-menu span,
+  .footer-menu a {
     font-size: 14px;
   }
 }
