@@ -1,6 +1,6 @@
 import "./PageBackground.css";
 import mountainBg from "../../assets/mountain-bg.png";
-import cocTraSua from "../../assets/lamtra-coctrasua.png";
+import cocTraSua from "../../assets/lamtra-icon1.png";
 import lamtraLogo from "../../assets/lamtra-logo.png";
 
 interface PageBackgroundProps {

@@ -1,7 +1,7 @@
 import "./Footer.css";
 import logo from "../../assets/lamtra-logo.png";
 import { Link } from "react-router-dom";
-import { FaFacebookF } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FiPhoneCall } from "react-icons/fi";
 
 function Footer() {
@@ -37,7 +37,11 @@ function Footer() {
           <div className="contact-title">Liên hệ nhà Lam</div>
 
           <div className="socials">
-            <a href="tel:0909123456" className="social-icon phone">
+            <a 
+              href="tel:0984562225" 
+              className="social-icon phone"
+              data-tooltip="Hotline"
+            >
               <FiPhoneCall />
             </a>
 
@@ -46,8 +50,29 @@ function Footer() {
               className="social-icon facebook"
               target="_blank"
               rel="noopener noreferrer"
+              data-tooltip="Facebook"
             >
               <FaFacebookF />
+            </a>
+
+            <a
+              href="https://www.instagram.com/trathomthanhvi/"
+              className="social-icon instagram"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-tooltip="Instagram"
+            >
+              <FaInstagram />
+            </a>
+
+            <a
+              href="https://www.tiktok.com/@daitiengnoilamtra" 
+              className="social-icon tiktok"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-tooltip="TikTok"
+            >
+              <FaTiktok />
             </a>
           </div>
         </div>

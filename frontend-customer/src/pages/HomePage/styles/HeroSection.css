@@ -1,0 +1,173 @@
+.hero-section {
+  display: flex;
+  justify-content: center; 
+  align-items: stretch;    
+  gap: 24px;               
+  max-width: 1200px;
+  margin: 0 auto;          
+  height: 600px;
+  position: relative;
+  z-index: 2;           
+}
+
+.frame-decor-bg {
+  position: absolute;
+  z-index: 0; 
+  color: var(--primary-color); 
+  opacity: 0.06; 
+  pointer-events: none; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.left-decor {
+  font-size: 300px; bottom: -50px; left: -50px; 
+  transform: rotate(-15deg); transition: transform 0.8s ease-out;
+}
+.right-decor {
+  font-size: 300px; top: -80px; right: -80px; 
+  transform: rotate(45deg); transition: transform 0.8s ease-out;
+}
+
+.side-frame:hover .left-decor { transform: rotate(0deg) scale(1.1); opacity: 0.1; }
+.side-frame:hover .right-decor { transform: rotate(60deg) scale(1.1); opacity: 0.1; }
+
+.side-frame {
+  flex: 1;      
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 16px;   
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #4a4a4a;
+  transition: transform 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.side-frame:hover {
+  background-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 25px rgba(255, 143, 163, 0.15); 
+}
+
+.quote-icon {
+  font-size: 40px; color: var(--primary-color); opacity: 0.2;
+  margin-bottom: -15px; margin-left: -10px;
+}
+.text-content { width: 100%; position: relative; z-index: 1; }
+
+.left-align { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.right-align { text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding-left: 10%; }
+
+.subtitle {
+  font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--primary-color); font-weight: 600; margin-bottom: 8px;
+}
+
+.main-title {
+  font-size: 42px; line-height: 1.2; font-weight: 700; margin: 0; color: var(--text-dark);
+}
+
+.highlight-text {
+  color: var(--primary-dark); font-family: var(--font-serif);
+  font-style: italic; font-size: 1.1em; 
+}
+
+.decorative-line {
+  width: 60px; height: 4px; background-color: var(--primary-color);
+  margin-top: 16px; border-radius: 2px;
+}
+
+.description-text {
+  font-size: 20px; line-height: 1.6; font-style: italic;
+  color: var(--text-gray); margin-bottom: 32px; max-width: 300px; 
+}
+
+.hero-btn {
+  display: inline-block; padding: 12px 32px;
+  background: linear-gradient(45deg, #ff8fa3, #f06292);
+  color: white; text-decoration: none; font-weight: 600;
+  border-radius: 30px; box-shadow: 0 4px 15px rgba(240, 98, 146, 0.4);
+  transition: all 0.3s ease; letter-spacing: 0.5px;
+}
+.hero-btn:hover {
+  transform: translateY(-3px); box-shadow: 0 6px 20px rgba(240, 98, 146, 0.6);
+  background: linear-gradient(45deg, #f06292, #ec407a);
+}
+
+.video-container {
+  width: 340px; flex-shrink: 0; background-color: #000;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative; transform: translateY(100px);
+}
+.clean-video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; background: transparent; }
+.animate-item { opacity: 0; transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.left-frame { transform: translateX(-100px); }
+.right-frame { transform: translateX(100px); }
+.hero-section.is-visible .animate-item { opacity: 1; transform: translate(0, 0); }
+.floating-icon-container { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; height: 0; overflow: visible; z-index:10; }
+.floating-icon {
+  position: absolute; left: -20px; top: -20px; width: 260px; height: auto;
+  opacity: 0; z-index: 10; pointer-events: none;
+  transform: translateX(-100px) rotate(-30deg) scale(0.8);
+}
+.floating-icon.animate {
+  animation: floatPath 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards, gentleSway 4s ease-in-out 2.5s infinite alternate;
+}
+
+@keyframes floatPath {
+  0% { opacity: 0; transform: translateX(-50px) translateY(30px) rotate(-15deg) scale(0.8); }
+  100% { opacity: 1; transform: translateX(40px) translateY(0px) rotate(10deg) scale(1); }
+}
+@keyframes gentleSway {
+  0% { transform: translateX(40px) translateY(0px) rotate(10deg) scale(1); }
+  100% { transform: translateX(40px) translateY(-15px) rotate(5deg) scale(1); }
+}
+
+@media (min-width: 901px) {
+  .hero-section.is-visible .left-frame { transition-delay: 0s; }
+  .hero-section.is-visible .video-container { transition-delay: 0.3s; }
+  .hero-section.is-visible .right-frame { transition-delay: 0.6s; }
+}
+
+@media (max-width: 900px) {
+  .hero-section { flex-direction: column; height: auto; align-items: center; }
+  .video-container { width: 100%; max-width: 350px; height: 620px; order: -1; }
+  .side-frame { width: 100%; height: 200px; position: relative; z-index: 3; }
+  .left-align, .right-align { text-align: center; align-items: center; padding-left: 0; }
+  .main-title { font-size: 32px; }
+  
+  .hero-section.is-visible .video-container { transition-delay: 0s; }
+  .hero-section.is-visible .left-frame { transition-delay: 0.3s; }
+  .hero-section.is-visible .right-frame { transition-delay: 0.6s; }
+
+  .left-frame { transform: translateX(-50px); }
+  .right-frame { transform: translateX(50px); }
+  .video-container { transform: translateY(50px); }
+
+  .floating-icon { width: 120px; top: -10px; left: -30px; z-index: 1; }
+  .floating-icon.animate { animation: simpleFloat 1.5s ease-out forwards, mobileSway 3s ease-in-out 1.5s infinite alternate; }
+  
+  @keyframes simpleFloat { from { opacity: 0; transform: translateX(-50px); } to { opacity: 0.8; transform: translateX(20px); } }
+  @keyframes mobileSway { 0% { transform: translateX(20px) translateY(0px); } 100% { transform: translateX(20px) translateY(-10px); } }
+}
+
+@media (min-width: 1441px) {
+  .hero-section, .floating-icon-container { max-width: 1600px; }
+  .main-title { font-size: 72px; }
+  .video-container { width: 380px; height: 600px; }
+  .hero-section { gap: 60px; }
+  .floating-icon { width: 350px; top: -40px; left: -60px; }
+}
+@media (min-width: 1921px) {
+  .hero-section { max-width: 1800px; }
+  .main-title { font-size: 90px; }
+  .video-container { width: 450px; height: 650px; }
+}

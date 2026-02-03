@@ -3,13 +3,13 @@ import "./App.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import PageBackground from "./components/PageBackground/PageBackground";
-import HomePage from "./pages/HomePage";
-import VeLamtra from "./pages/VeLamtra";
-import TinTuc from "./pages/TinTuc";
-import TuyenDung from "./pages/TuyenDung";
-import CuaHang from "./pages/CuaHang";
-import SanPham from "./pages/SanPham";
-import Feedbacks from "./pages/Feedbacks";
+import HomePage from "./pages/HomePage/HomePage";
+import VeLamtra from "./pages/VeLamTra/VeLamtra";
+import TinTuc from "./pages/TinTuc/TinTuc";
+import TuyenDung from "./pages/TuyenDung/TuyenDung";
+import CuaHang from "./pages/CuaHang/CuaHang";
+import SanPham from "./pages/SanPham/SanPham";
+import Feedbacks from "./pages/Feedbacks/Feedbacks";
 
 function AppContent() {
   const location = useLocation();
