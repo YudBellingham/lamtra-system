@@ -13,3 +13,9 @@ body {
   background: #f9f9f9;
   overflow-x: hidden;
 }
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}

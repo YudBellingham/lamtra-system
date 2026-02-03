@@ -1,0 +1,79 @@
+.ingredients-grid {
+  display: flex; justify-content: center; align-items: center; 
+  gap: 20px; padding: 0 20px; max-width: 1200px; margin: 0 auto; height: 500px; 
+}
+
+.ingredient-card {
+  position: relative; border-radius: 24px; 
+  overflow: hidden; cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transition: var(--transition-smooth);
+  background: #fff;
+}
+
+.card-image-wrapper { width: 100%; height: 100%; }
+.card-image-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+
+.card-small { width: 200px; height: 300px; transform: translateY(20px); }
+.card-large { width: 260px; height: 420px; z-index: 2; box-shadow: 0 15px 30px rgba(216, 67, 120, 0.2); }
+
+.ingredient-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); }
+.ingredient-card:hover .card-image-wrapper img { transform: scale(1.1); }
+
+.card-overlay {
+  position: absolute; bottom: 0; left: 0; width: 100%;
+  padding: 30px 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  color: white; text-align: center;
+  opacity: 0; transform: translateY(20px);
+  transition: all 0.4s ease;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+}
+
+.ingredient-card:hover .card-overlay { opacity: 1; transform: translateY(0); }
+
+.ing-name {
+  font-family: var(--font-serif); font-size: 24px;
+  margin: 0 0 8px 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.ing-desc {
+  font-size: 15px; font-weight: 400; margin: 0 0 15px 0;
+  color: rgba(255, 255, 255, 0.9); letter-spacing: 0.5px;
+}
+
+.ingredients-grid .ingredient-card { opacity: 0; }
+.ingredients-grid.start-anim .card-large { animation: fadeUpLarge 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+.ingredients-grid.start-anim .card-small { animation: fadeUpSmall 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+
+@keyframes fadeUpLarge { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUpSmall { from { opacity: 0; transform: translateY(80px); } to { opacity: 1; transform: translateY(20px); } }
+
+@media (max-width: 900px) {
+  .ingredients-grid { flex-direction: column; height: auto; gap: 20px; padding-bottom: 20px; }
+
+  .card-small, .card-large {
+    width: 100%; height: 180px; transform: none; border-radius: 16px;
+  }
+
+  .card-image-wrapper img { object-position: center 40%; }
+  
+  .card-overlay {
+    opacity: 1; transform: translateY(0); padding: 15px; height: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 100%);
+    justify-content: center; 
+  }
+  
+  .ing-name { font-size: 24px; font-weight: 700; }
+  .ing-desc { display: block; font-size: 14px; margin-top: 4px; opacity: 0.9; }
+
+  .ingredients-grid.start-anim .card-large,
+  .ingredients-grid.start-anim .card-small { animation: fadeUpMobile 0.6s ease-out forwards; }
+  
+  @keyframes fadeUpMobile { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+@media (min-width: 1441px) {
+  .ingredients-grid { max-width: 1600px; gap: 40px; }
+  .card-small { width: 240px; height: 360px; }
+  .card-large { width: 320px; height: 500px; }
+}

@@ -1,0 +1,88 @@
+:root {
+  --primary-color: #d84378;
+  --primary-dark: #d81b60;
+  --text-dark: #2c2c2c;
+  --text-gray: #555;
+  --font-serif: "Playfair Display", serif;
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.home-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.ingredients-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 100px; 
+  padding-bottom: 60px;
+  text-align: center;
+  position: relative;
+  z-index: 2; 
+}
+
+.section-header {
+  margin-bottom: 50px;
+  position: relative;
+}
+
+.sub-header {
+  font-size: 14px;
+  letter-spacing: 3px; 
+  text-transform: uppercase;
+  color: var(--primary-color); 
+  font-weight: 600;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.section-title {
+  font-size: 48px;
+  color: var(--text-dark);
+  font-family: var(--font-serif); 
+  font-weight: 700; 
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px; 
+}
+
+.decor-line {
+  display: block;
+  width: 60px;      
+  height: 2px;      
+  background: linear-gradient(90deg, transparent, #d84378, transparent);
+  opacity: 0.6;
+}
+
+.title-text {
+  position: relative;
+  z-index: 1;
+}
+
+.section-desc {
+  font-size: 18px;
+  color: #666;
+  font-style: italic;
+  margin-top: 16px;
+  max-width: 600px; 
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+@media (min-width: 1441px) {
+  .ingredients-section { max-width: 1600px; }
+  .section-title { font-size: 64px; }
+  .decor-line { width: 100px; }
+}
+
+@media (min-width: 1921px) {
+  .ingredients-section { max-width: 1800px; }
+}

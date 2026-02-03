@@ -1,7 +1,13 @@
 .lamtra-footer {
-  background: #f7a9bf;
+  background: linear-gradient(
+    to bottom,
+    #f5d5e0 0%,
+    #ff8fa3 40%, 
+    #ff8fa3 100%
+  );
   color: #ffffff;
   font-family: "Poppins", sans-serif;
+  padding: 60px 20px 32px 20px;
 }
 
 .footer-container {
@@ -120,11 +126,58 @@
 
   font-size: 18px;
   text-decoration: none;
+  position: relative;
 
   transition:
     background 0.25s ease,
     transform 0.2s ease,
     box-shadow 0.25s ease;
+}
+
+.social-icon::after {
+  content: attr(data-tooltip); 
+  position: absolute;
+  bottom: 125%; 
+  left: 50%;
+  transform: translateX(-50%) translateY(10px); 
+  
+  background-color: #222222; 
+  color: #ffffff;            
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;      
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  
+  opacity: 0;          
+  visibility: hidden;   
+  pointer-events: none; 
+  
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+  z-index: 10;
+}
+
+.social-icon::before {
+  content: "";
+  position: absolute;
+  bottom: 115%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #222222 transparent transparent transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 10;
+}
+
+.social-icon:hover::after,
+.social-icon:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .social-icon:hover {
