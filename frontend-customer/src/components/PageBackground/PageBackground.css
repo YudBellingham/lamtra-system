@@ -95,8 +95,8 @@
   object-fit: contain;
   z-index: 1;
   display: block;
-  filter: drop-shadow(0 2px 1px rgba(255, 255, 255, 0.8)) 
-          drop-shadow(0 4px 10px rgba(166, 75, 75, 0.3));
+  filter: drop-shadow(0 2px 1px rgba(255, 255, 255, 0.8))
+    drop-shadow(0 4px 10px rgba(166, 75, 75, 0.3));
   animation: slideInFromLeft 0.8s ease-out forwards;
 }
 
@@ -115,7 +115,7 @@
   z-index: 1;
   text-align: justify;
   animation: slideInFromBottom 0.8s ease-out forwards;
-  text-shadow: 0 0 1px rgba(255,255,255,0.1);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
@@ -141,23 +141,23 @@
 
 @media (max-width: 1024px) {
   .lamtra-logo-img {
-    display: none; 
+    display: none;
   }
 
   .lamtra-tagline {
-    top: 40%; 
-    transform: translateY(-50%); 
-    left: 5%; 
-    width: 55%;   
-    text-align: left; 
-    font-size: 16px; 
+    top: 40%;
+    transform: translateY(-50%);
+    left: 5%;
+    width: 55%;
+    text-align: left;
+    font-size: 16px;
     line-height: 1.8;
   }
 
   .coctrasua-img {
-    right: 2%; 
+    right: 2%;
     top: 55%;
-    height: 300px; 
+    height: 300px;
   }
 }
 
@@ -167,15 +167,91 @@
   }
 
   .lamtra-tagline {
-    top: 40%; 
-    width: 60%; 
-    left: 15px; 
-    font-size: 15px; 
+    top: 40%;
+    width: 60%;
+    left: 15px;
+    font-size: 15px;
   }
 
   .coctrasua-img {
-    right: 0%; 
+    right: 0%;
     height: 250px;
     top: 60%;
+  }
+}
+
+@keyframes slideInPageTitle {
+  from {
+    transform: translate(-50%, calc(-50% + 50px));
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+.page-title-section {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 900px;
+  text-align: center;
+  z-index: 2;
+  animation: slideInPageTitle 0.8s ease-out forwards;
+}
+
+.page-title {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 20px 0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.page-subtitle {
+  font-family: "Inter", sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 400;
+  color: #666;
+  margin: 0;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 1024px) {
+  .page-title-section {
+    top: 45%;
+  }
+
+  .page-title {
+    font-size: clamp(2.5rem, 7vw, 4rem);
+    margin-bottom: 15px;
+  }
+
+  .page-subtitle {
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .page-title-section {
+    top: 45%;
+    width: 95%;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .page-subtitle {
+    font-size: 0.95rem;
   }
 }

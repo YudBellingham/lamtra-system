@@ -11,9 +11,13 @@ import imgHongBi from "../../assets/homepage/hong-bi.png";
 import imgHatDe from "../../assets/homepage/hat-de.png";
 import imgCoc1 from "../../assets/homepage/coc1.png";
 import imgCoc2 from "../../assets/homepage/coc2.png";
+import imgCoc3 from "../../assets/homepage/coc3.png";
+import imgCoc4 from "../../assets/homepage/coc4.png";
+import imgCoc5 from "../../assets/homepage/coc5.png";
+import imgCoc6 from "../../assets/homepage/coc6.png";
 import lamtraIcon2 from "../../assets/lamtra-icon2.png";
 import { Link } from "react-router-dom";
-import { FaQuoteLeft, FaLeaf } from "react-icons/fa";
+import { FaQuoteLeft, FaLeaf, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { GiLotus } from "react-icons/gi";
 
 const HomePage: React.FC = () => {
@@ -25,6 +29,7 @@ const HomePage: React.FC = () => {
   const [ingrVisible, setIngrVisible] = useState(false);
   const spaceRef = useRef<HTMLDivElement>(null);
   const [spaceVisible, setSpaceVisible] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const ingredientsData = [
     {
@@ -56,6 +61,35 @@ const HomePage: React.FC = () => {
       className: "card-small",
     },
   ];
+
+  const sliderData = [
+    {
+      id: 1,
+      main: imgCoc1,
+      sub: imgCoc2,
+      alt: "Trà đào hồng",
+    },
+    {
+      id: 2,
+      main: imgCoc6, 
+      sub: imgCoc4,
+      alt: "Trà trái cây tươi",
+    },
+    {
+      id: 3,
+      main: imgCoc3,
+      sub: imgCoc5,
+      alt: "Matcha hạt dẻ",
+    },
+  ];
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev === sliderData.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev === 0 ? sliderData.length - 1 : prev - 1));
+  };
 
   useEffect(() => {
     const sectionObserver = new IntersectionObserver(
@@ -238,14 +272,36 @@ const HomePage: React.FC = () => {
         <div
           className={`feature-container ${spaceVisible ? "animate-feature" : ""}`}
         >
-          <div className="feature-gallery">
-            <div className="img-box main-img">
-              <img src={imgCoc1} alt="Ly trà Lam Trà" />
+          <div className="feature-gallery-wrapper">
+            <div className="feature-gallery">
+              <button className="nav-btn prev-btn" onClick={prevSlide}>
+                <FaChevronLeft />
+              </button>
+
+              <div className="gallery-content">
+                <div className="img-box main-img">
+                  <img src={sliderData[currentSlide].main} alt="Main showcase" />
+                </div>
+                <div className="img-box sub-img">
+                  <img src={sliderData[currentSlide].sub} alt="Sub detail" />
+                </div>
+              </div>
+              
+              <div className="decor-circle-bg"></div>
+              <button className="nav-btn next-btn" onClick={nextSlide}>
+                <FaChevronRight />
+              </button>
             </div>
-            <div className="img-box sub-img">
-              <img src={imgCoc2} alt="Chi tiết topping" />
+
+            <div className="slider-dots">
+              {sliderData.map((_, idx) => (
+                <span 
+                  key={idx} 
+                  className={`dot-indicator ${idx === currentSlide ? 'active' : ''}`}
+                  onClick={() => setCurrentSlide(idx)}
+                ></span>
+              ))}
             </div>
-            <div className="decor-circle-bg"></div>
           </div>
 
           <div className="feature-info">

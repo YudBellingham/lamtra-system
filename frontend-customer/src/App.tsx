@@ -13,14 +13,24 @@ import Feedbacks from "./pages/Feedbacks/Feedbacks";
 
 function AppContent() {
   const location = useLocation();
-  const isHomePage = location.pathname === "/";
+  const pageTypeMap: Record<string, any> = {
+    "/": "home",
+    "/ve-lamtra": "ve-lamtra",
+    "/tin-tuc": "tin-tuc",
+    "/tuyen-dung": "tuyen-dung",
+    "/cua-hang": "cua-hang",
+    "/san-pham": "san-pham",
+    "/feedbacks": "feedbacks",
+  };
+
+  const pageType = pageTypeMap[location.pathname] || "home";
 
   return (
     <div className="app-wrapper">
       <Header />
 
       <main className="app-content">
-        <PageBackground showCocTraSua={isHomePage} />
+        <PageBackground pageType={pageType} />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/ve-lamtra" element={<VeLamtra />} />

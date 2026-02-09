@@ -1,15 +1,70 @@
 import "./PageBackground.css";
+import { useEffect, useState } from "react";
 import mountainBg from "../../assets/mountain-bg.png";
 import cocTraSua from "../../assets/lamtra-icon1.png";
 import lamtraLogo from "../../assets/lamtra-logo.png";
 
+type PageType =
+  | "home"
+  | "tin-tuc"
+  | "ve-lamtra"
+  | "tuyen-dung"
+  | "cua-hang"
+  | "san-pham"
+  | "feedbacks";
+
 interface PageBackgroundProps {
-  showCocTraSua?: boolean;
+  pageType?: PageType;
 }
 
-function PageBackground({ showCocTraSua = false }: PageBackgroundProps) {
+const pageContent: Record<
+  PageType,
+  { title?: string; subtitle?: string; showCocTraSua?: boolean }
+> = {
+  home: {
+    showCocTraSua: true,
+  },
+  "tin-tuc": {
+    title: "TIN TỨC",
+    subtitle:
+      "Cập nhật những tin tức mới nhất về Lam Trà, các sản phẩm độc đáo và chương trình khuyến mãi hấp dẫn",
+  },
+  "ve-lamtra": {
+    title: "VỀ LAM TRÀ",
+    subtitle: "Khám phá câu chuyện và giá trị cốt lõi của thương hiệu Lam Trà",
+  },
+  "tuyen-dung": {
+    title: "TUYỂN DỤNG",
+    subtitle:
+      "Gia nhập đội ngũ Lam Trà và cùng chúng tôi tạo nên những ly trà tuyệt vời",
+  },
+  "cua-hang": {
+    title: "CỬA HÀNG",
+    subtitle:
+      "Tìm cửa hàng Lam Trà gần nhất và thưởng thức trải nghiệm đặc biệt",
+  },
+  "san-pham": {
+    title: "SẢN PHẨM",
+    subtitle: "Khám phá bộ sưu tập đa dạng các sản phẩm trà chất lượng cao",
+  },
+  feedbacks: {
+    title: "FEEDBACKS",
+    subtitle: "Chia sẻ trải nghiệm của bạn và giúp chúng tôi ngày càng tốt hơn",
+  },
+};
+
+function PageBackground({ pageType = "home" }: PageBackgroundProps) {
+  const [animationKey, setAnimationKey] = useState(0);
+
+  useEffect(() => {
+    setAnimationKey((prev) => prev + 1);
+  }, [pageType]);
+
+  const content = pageContent[pageType];
+  const { showCocTraSua = false, title, subtitle } = content;
+
   return (
-    <div className="page-background">
+    <div className="page-background" key={animationKey}>
       <div className="background-mountain">
         <img
           src={mountainBg}
@@ -34,6 +89,12 @@ function PageBackground({ showCocTraSua = false }: PageBackgroundProps) {
             className="coctrasua-img"
           />
         </>
+      )}
+      {title && (
+        <div className="page-title-section">
+          <h1 className="page-title">{title}</h1>
+          {subtitle && <p className="page-subtitle">{subtitle}</p>}
+        </div>
       )}
     </div>
   );
