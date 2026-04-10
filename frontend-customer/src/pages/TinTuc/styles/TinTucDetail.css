@@ -1,0 +1,93 @@
+.tintuc-detail {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: rgba(245, 200, 220, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tintuc-detail-back {
+  background: none;
+  border: none;
+  color: #d4845c;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 30px;
+  transition: color 0.3s ease;
+}
+
+.tintuc-detail-back:hover {
+  color: #a0522d;
+}
+
+.tintuc-detail-header {
+  margin-bottom: 40px;
+}
+
+.tintuc-detail-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.tintuc-detail-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tintuc-detail-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.tintuc-detail-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.tintuc-detail-date,
+.tintuc-detail-author {
+  display: flex;
+  align-items: center;
+}
+
+.tintuc-detail-content {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #444;
+  word-break: break-word;
+}
+
+.tintuc-detail-content p {
+  margin: 0 0 16px 0;
+  white-space: pre-wrap;
+}
+
+.tintuc-detail-content p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .tintuc-detail {
+    padding: 20px 16px;
+  }
+
+  .tintuc-detail-title {
+    font-size: 24px;
+  }
+
+  .tintuc-detail-content {
+    font-size: 15px;
+  }
+}

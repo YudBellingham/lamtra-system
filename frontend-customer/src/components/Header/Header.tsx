@@ -1,11 +1,45 @@
 import "./Header.css";
 import logo from "../../assets/lamtra-logo.png";
-import { NavLink, Link } from "react-router-dom";
-import { FiMenu, FiUser } from "react-icons/fi";
-import { useState } from "react";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { FiMenu, FiUser, FiLogOut, FiShoppingCart } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
+import { useCart } from "../../context/CartContext";
 
 function Header() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+  const { totalItems } = useCart();
+
+  useEffect(() => {
+    const fetchUser = async (sessionUser: any) => {
+       if (!sessionUser) {
+         setUser(null);
+         return;
+       }
+       const { data } = await supabase.from('customers').select('fullname').eq('authid', sessionUser.id).maybeSingle();
+       setUser({
+         ...sessionUser,
+         fullname: data?.fullname || sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || sessionUser.email || 'Thành viên'
+       });
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetchUser(session?.user);
+    });
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      fetchUser(session?.user);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <header className="lamtra-header">
@@ -78,9 +112,43 @@ function Header() {
           </nav>
 
           <div className="header-icons">
-            <div className="header-user-icon">
-              <FiUser />
+            <div className="header-cart-wrapper tooltip-container">
+              <Link to="/cart" className="header-cart-icon">
+                <FiShoppingCart />
+                <span className="cart-badge">{totalItems}</span>
+              </Link>
+              <span className="tooltip-text">Giỏ hàng</span>
             </div>
+
+            {user ? (
+              <div className="header-user-wrapper">
+                <div className="header-user-icon active" style={{ overflow: 'hidden', fontWeight: 'bold' }}>
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    user.fullname ? user.fullname.charAt(0).toUpperCase() : <FiUser />
+                  )}
+                </div>
+                <div className="user-dropdown">
+                  <div className="user-dropdown-info">
+                    <span className="user-email">{user.fullname}</span>
+                  </div>
+                  <Link to="/profile?tab=1" className="user-dropdown-item">Tài khoản của tôi</Link>
+                  <Link to="/profile?tab=3" className="user-dropdown-item">Lịch sử đơn hàng</Link>
+                  <Link to="/profile?tab=4" className="user-dropdown-item">Đổi mật khẩu</Link>
+                  <button onClick={handleLogout} className="logout-btn" style={{ marginTop: '4px' }}>
+                    <FiLogOut /> Đăng xuất
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="header-user-wrapper tooltip-container">
+                <Link to="/auth" className="header-user-icon">
+                  <FiUser />
+                </Link>
+                <span className="tooltip-text">Đăng nhập / Đăng ký</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

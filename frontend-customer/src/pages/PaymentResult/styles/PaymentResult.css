@@ -1,0 +1,117 @@
+.payment-result-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+  position: relative;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.payment-card {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px;
+  padding: 50px 30px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(216, 27, 96, 0.1);
+  animation: slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.result-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+
+.result-icon.success {
+  color: #4caf50;
+}
+
+.result-icon.failed {
+  color: #f44336;
+}
+
+.payment-card h2 {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 26px;
+  margin-bottom: 15px;
+}
+
+.success-text {
+  color: #2e7d32;
+}
+
+.failed-text {
+  color: #c62828;
+}
+
+.payment-card p {
+  color: #555;
+  line-height: 1.6;
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.result-actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff8fa3, #d81b60);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.3);
+}
+
+.btn-secondary {
+  background: #fff0f4;
+  color: #d81b60;
+  border: 1px solid #ffccd5;
+}
+
+.btn-secondary:hover {
+  background: #ffe3e8;
+  border-color: #d81b60;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #ffeff3;
+  border-top-color: #d81b60;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}

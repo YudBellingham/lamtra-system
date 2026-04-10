@@ -11,7 +11,11 @@ type PageType =
   | "tuyen-dung"
   | "cua-hang"
   | "san-pham"
-  | "feedbacks";
+  | "feedbacks"
+  | "profile"
+  | "cart"
+  | "payment-result"
+  | "order-tracking";
 
 interface PageBackgroundProps {
   pageType?: PageType;
@@ -23,6 +27,19 @@ const pageContent: Record<
 > = {
   home: {
     showCocTraSua: true,
+  },
+  profile: {
+    title: "TRANG CÁ NHÂN",
+    subtitle: "Quản lý thông tin cá nhân và lịch sử tích điểm của bạn",
+  },
+  cart: {
+    title: "GIỎ HÀNG CỦA BẠN",
+  },
+  "payment-result": {
+    title: "KẾT QUẢ THANH TOÁN"
+  },
+  "order-tracking": {
+    title: "THEO DÕI ĐƠN HÀNG"
   },
   "tin-tuc": {
     title: "TIN TỨC",

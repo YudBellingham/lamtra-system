@@ -5,6 +5,7 @@ import "./styles/IngredientsSection.css";
 import "./styles/FeatureSection.css";
 import BackgroundDecor from "../../components/PageBackground/BackgroundDecor";
 import heroVideo from "../../assets/homepage/hero-reel.mp4";
+import { supabase } from "../../lib/supabase";
 import imgDao from "../../assets/homepage/dao.png";
 import imgMatcha from "../../assets/homepage/matcha.png";
 import imgHongBi from "../../assets/homepage/hong-bi.png";
@@ -30,6 +31,7 @@ const HomePage: React.FC = () => {
   const spaceRef = useRef<HTMLDivElement>(null);
   const [spaceVisible, setSpaceVisible] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [latestNews, setLatestNews] = useState<any[]>([]);
 
   const ingredientsData = [
     {
@@ -150,6 +152,17 @@ const HomePage: React.FC = () => {
     if (spaceRef.current) {
       spaceObserver.observe(spaceRef.current);
     }
+
+    const fetchLatestNews = async () => {
+      const { data } = await supabase
+        .from("news")
+        .select("*")
+        .eq("status", "Hiện")
+        .order("publisheddate", { ascending: false })
+        .limit(3);
+      if (data) setLatestNews(data);
+    };
+    fetchLatestNews();
 
     return () => {
       if (sectionRef.current) sectionObserver.disconnect();
@@ -352,6 +365,39 @@ const HomePage: React.FC = () => {
 
         <div style={{ height: "80px" }}></div>
       </section>
+
+      {latestNews.length > 0 && (
+        <section className="ingredients-section homepage-news-section" style={{ paddingBottom: '80px', marginTop: '-40px' }}>
+          <div className="section-header">
+            <span className="sub-header">CẬP NHẬT MỚI NHẤT</span>
+            <h2 className="section-title">
+              <span className="decor-line"></span>
+              <span className="title-text">TIN TỨC LAM TRÀ</span>
+              <span className="decor-line"></span>
+            </h2>
+          </div>
+          <div className="news-grid" style={{ padding: '0 5%', maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+            {latestNews.map(news => (
+              <div key={news.newsid} className="news-card" onClick={() => window.location.href=`/tin-tuc/${news.newsid}`} style={{ background: '#fff', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.3s' }}>
+                <div className="news-image-wrapper" style={{ position: 'relative', height: '200px' }}>
+                  <img src={news.thumbnail} alt={news.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <span className="news-type-badge story" style={{ position: 'absolute', top: '10px', left: '10px', background: '#d81b60', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>{news.type}</span>
+                </div>
+                <div className="news-info" style={{ padding: '20px' }}>
+                  <h3 className="news-card-title" style={{ fontSize: '1.2rem', margin: '0 0 10px 0', color: '#333' }}>{news.title}</h3>
+                  <p className="news-excerpt" style={{ fontSize: '0.95rem', color: '#666', marginBottom: '15px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{news.excerpt}</p>
+                  <div className="news-meta" style={{ color: '#999', fontSize: '0.85rem' }}>
+                    {new Date(news.publisheddate).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <Link to="/tin-tuc" className="hero-btn" style={{ display: 'inline-block' }}>Xem tất cả tin tức</Link>
+          </div>
+        </section>
+      )}
     </main>
   );
 };

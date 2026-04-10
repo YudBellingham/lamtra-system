@@ -1,0 +1,119 @@
+.tintuc-list-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tintuc-list-title {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 40px;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.tintuc-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.tintuc-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tintuc-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.tintuc-card-image {
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.tintuc-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.tintuc-card:hover .tintuc-card-image img {
+  transform: scale(1.05);
+}
+
+.tintuc-card-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tintuc-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tintuc-card-date {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin: 0 0 12px 0;
+}
+
+.tintuc-card-summary {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tintuc-card-button {
+  align-self: flex-start;
+  background: linear-gradient(135deg, #d4845c 0%, #a0522d 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+}
+
+.tintuc-card-button:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .tintuc-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tintuc-list-title {
+    font-size: 24px;
+  }
+}
