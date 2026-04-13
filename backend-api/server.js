@@ -177,6 +177,9 @@ app.post('/api/send-application', async (req, res) => {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
+            connectionTimeout: 10000, // 10s
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
         });
 
         const mailOptions = {
@@ -233,7 +236,13 @@ app.post('/api/send-application', async (req, res) => {
       `
         };
 
-        await transporter.sendMail(mailOptions);
+        // Thêm fail-safe timeout 15s để tránh treo form vô hạn
+        const sendMailPromise = transporter.sendMail(mailOptions);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Quá thời gian gửi mail (15s)')), 15000)
+        );
+
+        await Promise.race([sendMailPromise, timeoutPromise]);
         res.json({ status: 'success', message: 'Email đã được gửi' });
     } catch (error) {
         res.status(500).json({ status: 'error', message: 'Không thể gửi thư. ' + error.message });

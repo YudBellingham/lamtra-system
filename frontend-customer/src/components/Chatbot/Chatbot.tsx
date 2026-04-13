@@ -41,7 +41,8 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5001/api/chat', {
+      const aiUrl = import.meta.env.VITE_AI_URL || 'http://localhost:5001';
+      const response = await fetch(`${aiUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: contextMessages })
