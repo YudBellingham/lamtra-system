@@ -18,12 +18,17 @@ const supabaseKey =
   process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error("⚠️ THIẾU KẾT NỐI DATABASE. Không tìm thấy VITE_SUPABASE_URL.");
+  console.error("\n❌ CRITICAL ERROR: SUPABASE CONNECTION FAILED");
+  console.error("   ❌ VITE_SUPABASE_URL không được tìm thấy");
+  console.error("   ❌ VITE_SUPABASE_ANON_KEY không được tìm thấy");
+  console.error("\n   📋 Vui lòng kiểm tra file .env tại:");
+  console.error("   - d:\\lamtra-system\\ai-service\\.env");
+  console.error("   - d:\\lamtra-system\\frontend-customer\\.env");
+  console.error("\n   Không thể khởi chạy AI Service bằng dữ liệu fake.\n");
+  process.exit(1); // Exit ngay, không tiếp tục
 }
-const supabase = createClient(
-  supabaseUrl || "https://mock.supabase.co",
-  supabaseKey || "mockkey",
-);
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log("==========================================");
 console.log(
@@ -81,79 +86,151 @@ Cột: categoryid, name, description
 
 // ==================== DYNAMIC CONTEXT RETRIEVAL (Schema-Driven RAG) ====================
 
-// HÀNG ĐỢI AN TOÀN: Danh sách các query được phép thực thi
-const SAFE_QUERY_TEMPLATES = {
-  getCustomerInfo: (cid) => ({
-    table: "customers",
-    select:
-      "fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
-    filter: { customerid: cid },
-  }),
-  getCustomerOrders: (cid) => ({
-    table: "orders",
-    select: "orderid, status, finalamount, orderdate, address_detail",
-    filter: { customerid: cid },
-    orderBy: { column: "orderdate", ascending: false },
-    limit: 5,
-  }),
-  getAllProducts: () => ({
-    table: "products",
-    select:
-      "productid, name, baseprice, description, isactive, categories(categoryid, name)",
-    filter: { isactive: true },
-    limit: 50,
-  }),
-  getProductsByCategory: (catName) => ({
-    table: "products",
-    select: "productid, name, baseprice, description, categories(name)",
-    filter: { isactive: true },
-    limit: 30,
-    category: catName,
-  }),
-  getAllBranches: () => ({
-    table: "branches",
-    select: "branchid, name, address, phone, opentime, closetime",
-    filter: { isactive: true },
-    limit: 20,
-  }),
+// ==================== INTELLIGENT TABLE SELECTOR (AI-DRIVEN) ====================
+// Hàm này sẽ giúp AI quyết định cần lấy dữ liệu từ bảng nào
+const TABLE_DESCRIPTORS = {
+  customers: {
+    name: "customers",
+    description:
+      "Bảng thông tin khách hàng: tên, email, điểm tích lũy, hạng thẻ, ngày sinh",
+    keywords: [
+      "điểm",
+      "hạng",
+      "thành viên",
+      "từng khách",
+      "tài khoản",
+      "hồ sơ",
+    ],
+    publicColumns: [
+      "fullname",
+      "email",
+      "phone",
+      "membership",
+      "totalpoints",
+      "accumulated_points",
+      "birthday",
+    ],
+  },
+  orders: {
+    name: "orders",
+    description:
+      "Bảng lịch sử đơn hàng: mã đơn, trạng thái, ngày đặt, tổng tiền, địa chỉ giao",
+    keywords: ["đơn", "đơn hàng", "lịch sử", "trạng thái", "đã đặt", "giao"],
+    publicColumns: [
+      "orderid",
+      "status",
+      "finalamount",
+      "orderdate",
+      "address_detail",
+    ],
+  },
+  products: {
+    name: "products",
+    description:
+      "Bảng menu sản phẩm: tên sản phẩm, giá, mô tả, danh mục, hình ảnh",
+    keywords: [
+      "món",
+      "menu",
+      "sản phẩm",
+      "giá",
+      "đồ uống",
+      "trà",
+      "danh mục",
+      "category",
+      "có gì",
+    ],
+    publicColumns: [
+      "productid",
+      "name",
+      "baseprice",
+      "description",
+      "imageurl",
+      "categoryid",
+    ],
+  },
+  branches: {
+    name: "branches",
+    description:
+      "Bảng chi nhánh: tên chi nhánh, địa chỉ, điện thoại, giờ mở cửa",
+    keywords: [
+      "chi nhánh",
+      "cửa hàng",
+      "địa chỉ",
+      "quận",
+      "khu vực",
+      "gần",
+      "phone",
+    ],
+    publicColumns: [
+      "branchid",
+      "name",
+      "address",
+      "phone",
+      "opentime",
+      "closetime",
+    ],
+  },
 };
 
-// BƯỚC 1: DYNAMIC CONTEXT RETRIEVAL (AI-Driven Schema-Based RAG)
+// Function để AI analyze và suggest cần query bảng nào
+async function analyzeQueryNeedsWithAI(prompt, customerid = null) {
+  try {
+    const analysisPrompt = `
+Bạn là chuyên gia phân tích dữ liệu. Dựa trên câu hỏi của khách: "${prompt}"
+
+Hãy xác định câu hỏi này cần dữ liệu từ bảng nào trong số:
+1. customers - Thông tin khách hàng (điểm, hạng, tài khoản)
+2. orders - Lịch sử đơn hàng (đơn hàng, trạng thái)  
+3. products - Menu sản phẩm (món, giá, danh mục)
+4. branches - Chi nhánh (địa chỉ, giờ mở)
+
+Trả lời NGẮN GỌN theo format: "TABLES: [bảng1, bảng2]"
+Ví dụ: "TABLES: products, categories" hoặc "TABLES: customers"
+`;
+
+    const response = await groq.chat.completions.create({
+      messages: [{ role: "user", content: analysisPrompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+      max_tokens: 100,
+    });
+
+    const responseText = response.choices[0]?.message?.content || "";
+    const tableMatch = responseText.match(/TABLES:\s*\[(.*?)\]/i);
+    const suggestedTables = tableMatch
+      ? tableMatch[1]
+          .split(",")
+          .map((t) => t.trim().toLowerCase())
+          .filter((t) => Object.keys(TABLE_DESCRIPTORS).includes(t))
+      : [];
+
+    return suggestedTables.length > 0
+      ? suggestedTables
+      : ["products", "branches"]; // Default fallback
+  } catch (err) {
+    console.warn("⚠️ Lỗi khi analyze query:", err.message);
+    return ["products"]; // Safe fallback
+  }
+}
+
+// BƯỚC 1: DYNAMIC CONTEXT RETRIEVAL (AI-Driven, No Manual If-Else)
 async function retrieveDynamicContext(prompt, customerid = null) {
   let contextData = "\n═══════════════════════════════════════";
-  const lowerPrompt = prompt.toLowerCase();
+  contextData += "\n[📊 SCHEMA AVAILABLE]";
+  contextData += `\n${DATABASE_SCHEMA}`;
+  contextData += `\n${LAMTRA_KNOWLEDGE}`;
 
   try {
-    // ✅ PHÂN TÍCH INTENT: AI tự quyết định cần lấy dữ liệu nào
-    contextData += "\n[SCHEMA AVAILABLE - AI CÓ THỂ QUERY:]";
-    contextData += `\n${DATABASE_SCHEMA}`;
-    contextData += `\n${LAMTRA_KNOWLEDGE}`;
+    // ✅ STEP 1: Dùng AI để analyze câu hỏi và xác định cần query bảng nào
+    console.log("🧠 Analyzing query with AI...");
+    const suggestedTables = await analyzeQueryNeedsWithAI(prompt, customerid);
+    console.log(`   → Suggested tables: ${suggestedTables.join(", ")}`);
 
-    // Strategy: Nếu prompt chứa từ khóa, hãy lấy dữ liệu liên quan tự động
-    const intents = {
-      hasCustomerInfo:
-        lowerPrompt.includes("điểm") ||
-        lowerPrompt.includes("hạng") ||
-        lowerPrompt.includes("thành viên"),
-      hasOrderInfo:
-        lowerPrompt.includes("đơn") ||
-        lowerPrompt.includes("đã đặt") ||
-        lowerPrompt.includes("lịch sử") ||
-        lowerPrompt.includes("trạng thái"),
-      hasProductInfo:
-        lowerPrompt.includes("món") ||
-        lowerPrompt.includes("menu") ||
-        lowerPrompt.includes("sản phẩm") ||
-        lowerPrompt.includes("giá"),
-      hasBranchInfo:
-        lowerPrompt.includes("chi nhánh") ||
-        lowerPrompt.includes("cửa hàng") ||
-        lowerPrompt.includes("địa chỉ") ||
-        lowerPrompt.includes("quận"),
-    };
+    // ✅ STEP 2: Fetch dữ liệu từ các bảng được suggest
+    const fetchedData = {};
 
-    // Thực thi các query an toàn dựa trên intent
-    if (intents.hasCustomerInfo && customerid) {
+    // Nếu AI suggest lấy customer info
+    if (suggestedTables.includes("customers") && customerid) {
       try {
         const { data } = await supabase
           .from("customers")
@@ -163,96 +240,137 @@ async function retrieveDynamicContext(prompt, customerid = null) {
           .eq("customerid", customerid)
           .single();
         if (data) {
-          contextData += `\n\n[👤 THÔNG TIN KHÁCH HÀNG]:\nTên: ${data.fullname}\nHạng thẻ: ${data.membership} | Điểm tích lũy: ${data.totalpoints} | Điểm tích luỹ tổng: ${data.accumulated_points}\nSinh nhật: ${data.birthday || "Chưa cập nhật"}\n`;
+          fetchedData.customer = data;
         }
       } catch (err) {
-        console.warn("⚠️ Lỗi lấy customer info:", err.message);
+        console.warn("⚠️ Lỗi lấy customer:", err.message);
       }
     }
 
-    if (intents.hasOrderInfo && customerid) {
+    // Nếu AI suggest lấy order info
+    if (suggestedTables.includes("orders") && customerid) {
       try {
         const { data } = await supabase
           .from("orders")
           .select("orderid, status, finalamount, orderdate, address_detail")
           .eq("customerid", customerid)
           .order("orderdate", { ascending: false })
-          .limit(5);
+          .limit(10);
         if (data && data.length > 0) {
-          contextData +=
-            `\n[🛒 ĐƠN HÀNG GẦN ĐÂY]:\n` +
-            data
-              ?.map(
-                (o) =>
-                  `- Đơn #${o.orderid} | ${new Date(o.orderdate).toLocaleDateString("vi-VN")} | ${o.status} | ${o.finalamount?.toLocaleString()}đ | ${o.address_detail || "TBD"}`,
-              )
-              .join("\n") +
-            `\n`;
-        } else {
-          contextData += `\n[🛒 ĐƠN HÀNG]: Khách chưa có đơn hàng nào.\n`;
+          fetchedData.orders = data;
         }
       } catch (err) {
-        console.warn("⚠️ Lỗi lấy order info:", err.message);
+        console.warn("⚠️ Lỗi lấy orders:", err.message);
       }
-    } else if (intents.hasOrderInfo) {
-      contextData += `\n[🛒 ĐƠN HÀNG]: Khách chưa đăng nhập nên không thể xem lịch sử.\n`;
     }
 
-    if (intents.hasProductInfo) {
+    // Nếu AI suggest lấy product info - LẤY TOÀN BỘ MENU
+    if (suggestedTables.includes("products")) {
       try {
         const { data } = await supabase
           .from("products")
-          .select("productid, name, baseprice, description, categories(name)")
-          .eq("isactive", true)
-          .limit(50);
+          .select(
+            "productid, name, baseprice, description, imageurl, isactive, categories(categoryid, name)",
+          )
+          .eq("isactive", true); // TẠI ĐÂY: KHÔNG LIMIT, LẤY TOÀN BỘ
+
         if (data && data.length > 0) {
-          // Nhóm theo category nếu có
-          const grouped = {};
-          data.forEach((p) => {
-            const cat = p.categories?.name || "Khác";
-            if (!grouped[cat]) grouped[cat] = [];
-            grouped[cat].push(p);
-          });
-          contextData += `\n[☕ MENU THỰC TẾ]:\n`;
-          Object.entries(grouped).forEach(([cat, products]) => {
-            contextData += `\n  📌 ${cat}:\n`;
-            products.slice(0, 8).forEach((p) => {
-              contextData += `    • ${p.name} - ${p.baseprice?.toLocaleString()}đ: ${p.description || ""}\n`;
-            });
-          });
+          fetchedData.products = data;
         }
       } catch (err) {
-        console.warn("⚠️ Lỗi lấy product info:", err.message);
+        console.warn("⚠️ Lỗi lấy products:", err.message);
       }
     }
 
-    if (intents.hasBranchInfo) {
+    // Nếu AI suggest lấy branch info
+    if (suggestedTables.includes("branches")) {
       try {
         const { data } = await supabase
           .from("branches")
-          .select("name, address, phone, opentime, closetime")
-          .eq("isactive", true)
-          .limit(20);
+          .select(
+            "branchid, name, address, phone, opentime, closetime, lat, lng",
+          )
+          .eq("isactive", true);
+
         if (data && data.length > 0) {
-          contextData +=
-            `\n[🏪 CHI NHÁNH LAM TRÀ]:\n` +
-            data
-              ?.map(
-                (b) =>
-                  `- ${b.name}: ${b.address} | ☎️ ${b.phone} | Giờ: ${b.opentime || "8:00"} - ${b.closetime || "22:00"}`,
-              )
-              .join("\n") +
-            `\n`;
+          fetchedData.branches = data;
         }
       } catch (err) {
-        console.warn("⚠️ Lỗi lấy branch info:", err.message);
+        console.warn("⚠️ Lỗi lấy branches:", err.message);
+      }
+    }
+
+    // ✅ STEP 3: Format dữ liệu thành readable context cho AI
+    if (
+      Object.keys(fetchedData).length === 0 &&
+      !customerid &&
+      suggestedTables.includes("orders")
+    ) {
+      contextData +=
+        "\n[📋 LƯỚI Ý]: Khách chưa đăng nhập nên không thể xem lịch sử đơn hàng.";
+    } else {
+      if (fetchedData.customer) {
+        contextData += `
+[👤 THÔNG TIN KHÁCH HÀNG]
+Tên: ${fetchedData.customer.fullname}
+Email: ${fetchedData.customer.email}
+Điện thoại: ${fetchedData.customer.phone}
+Hạng thẻ: ${fetchedData.customer.membership}
+Điểm hiện có: ${fetchedData.customer.totalpoints}
+Điểm tích luỹ tổng: ${fetchedData.customer.accumulated_points}
+Sinh nhật: ${fetchedData.customer.birthday || "Chưa cập nhật"}`;
+      }
+
+      if (fetchedData.orders && fetchedData.orders.length > 0) {
+        contextData += `\n\n[🛒 LỊCH SỬ ĐƠN HÀNG - ${fetchedData.orders.length} đơn gần đây]`;
+        fetchedData.orders.forEach((o) => {
+          contextData += `
+- Đơn #${o.orderid}
+  Ngày: ${new Date(o.orderdate).toLocaleDateString("vi-VN")}
+  Trạng thái: ${o.status}
+  Tổng tiền: ${o.finalamount?.toLocaleString()}đ
+  Địa chỉ: ${o.address_detail || "Chưa có"}`;
+        });
+      }
+
+      if (fetchedData.products && fetchedData.products.length > 0) {
+        // Nhóm theo category
+        const grouped = {};
+        fetchedData.products.forEach((p) => {
+          const cat = p.categories?.name || "Khác";
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(p);
+        });
+
+        contextData += `\n\n[☕ MENU LAM TRÀ - ${fetchedData.products.length} sản phẩm]`;
+        Object.entries(grouped).forEach(([cat, products]) => {
+          contextData += `\n\n📌 ${cat}:`;
+          products.forEach((p) => {
+            contextData += `
+   • ${p.name} - ${p.baseprice?.toLocaleString()}đ`;
+            if (p.description)
+              contextData += `
+     Mô tả: ${p.description}`;
+          });
+        });
+      }
+
+      if (fetchedData.branches && fetchedData.branches.length > 0) {
+        contextData += `\n\n[🏪 CHI NHÁNH LAM TRÀ - ${fetchedData.branches.length} chi nhánh]`;
+        fetchedData.branches.forEach((b) => {
+          contextData += `
+- ${b.name}
+  Địa chỉ: ${b.address}
+  Điện thoại: ${b.phone}
+  Giờ mở: ${b.opentime || "8:00"} - ${b.closetime || "22:00"}`;
+        });
       }
     }
 
     contextData += "\n═══════════════════════════════════════\n";
     return contextData;
   } catch (err) {
-    console.error("Lỗi retrieveDynamicContext:", err.message);
+    console.error("❌ Lỗi retrieveDynamicContext:", err.message);
     return LAMTRA_KNOWLEDGE;
   }
 }
@@ -263,11 +381,9 @@ app.post("/api/chat", async (req, res) => {
     const { messages, customerid } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
-      return res
-        .status(400)
-        .json({
-          reply: "Vui lòng cung cấp lịch sử hội thoại hợp lệ (mảng messages).",
-        });
+      return res.status(400).json({
+        reply: "Vui lòng cung cấp lịch sử hội thoại hợp lệ (mảng messages).",
+      });
     }
 
     // Lấy nguyên văn câu hỏi cuối cùng của khách
@@ -279,57 +395,80 @@ app.post("/api/chat", async (req, res) => {
     // BƯỚC 1: Thu thập bối cảnh dữ liệu động từ Database
     const DYNAMIC_DB_CONTEXT = await retrieveDynamicContext(prompt, customerid);
 
-    // BƯỚC 2: Tạo System Instruction tối ưu với Bảo mật & Hướng dẫn
+    // BƯỚC 2: Tạo System Instruction tối ưu - ƯU TIÊN DATABASE TRƯỚC
     const systemInstruction = `
 ═════════════════════════════════════════════════════════════════
-🤖 LAM TRÀ AI ASSISTANT - SCHEMA-DRIVEN INTELLIGENT CHATBOT
+🤖 LAM TRÀ AI ASSISTANT - DATABASE-FIRST INTELLIGENT CHATBOT
 ═════════════════════════════════════════════════════════════════
 
 BẠN LÀ AI AGENT CỦA TIỆM TRÀ SỮA LAM TRÀ.
-Mục tiêu: Tư vấn, hỗ trợ, và giải đáp mọi câu hỏi về Lam Trà một cách thân thiện, chuyên nghiệp.
+Mục tiêu: Trả lời chính xác 100% dựa trên dữ liệu thực từ Database.
 
 ${LAMTRA_KNOWLEDGE}
 
 ${DYNAMIC_DB_CONTEXT}
 
 ═════════════════════════════════════════════════════════════════
-[QUY TẮC HOẠT ĐỘNG CẤP 1 - BẮT BUỘC]
+[🔥 QUY TẮC HOẠT ĐỘNG - BẮT BUỘC TUÂN THỨ]
 ═════════════════════════════════════════════════════════════════
 
-1. ✅ Ưति ĐỮ LIỆU THỰC TẾ:
-   - Luôn sử dụng dữ liệu từ Database (MENU, CHI NHÁNH, ĐƠN HÀNG, v.v.)
-   - Nếu thông tin không có trong Database, hãy trả lời: "Dạ, Lam Trà chưa có thông tin về [X]. Bạn có thể liên hệ hotline để được tư vấn nhé!"
+⭐️ NGUYÊN TẮC CỨ:
+   LUÔN LUÔN sử dụng dữ liệu từ database được cung cấp ở trên.
+   KHÔNG BAO GIỜ bịa ra thông tin nếu không có trong database.
+   Nếu không tìm thấy, trả lời: "Dạ, Lam Trà chưa có thông tin về [X]. Bạn có thể liên hệ hotline để được tư vấn nhé!"
 
-2. 🔒 BẢO MẬT DỮ LIỆU:
-   - TUYỆT ĐỐI KHÔNG acc, password, auth_id, hoặc dữ liệu khách hàng khác
-   - Chỉ hiển thị dữ liệu của khách hàng đang hỏi (không so sánh hay rò rỉ thông tin khác)
-   - Mọi truy vấn phải an toàn và hợp pháp
+[STEP 1️⃣]: PHÂN TÍCH CÂU HỎI
+   - Khách hỏi gì? (Menu? Đơn hàng? Thông tin? Chi nhánh?)
+   - Cần dữ liệu từ bảng nào? (customers, orders, products, branches)
 
-3. 🎯 GỢI Ý SẢN PHẨM:
-   - Khi khách tìm sản phẩm không tìm thấy (ví dụ: "Chè xanh"), hãy gợi ý các sản phẩm tương tự dựa trên CATEGORY
-   - VD: "Dạ, hiện Lam Trà chưa có 'Chè xanh', nhưng có các sản phẩm tương tự như Trà Xanh, Matcha, v.v."
+[STEP 2️⃣]: KIỂM TRA DỮ LIỆU ĐÃ ĐƯỢC FETCH
+   - Dữ liệu đã được lấy từ Database ở trên
+   - Dữ liệu nào có thực? Dữ liệu nào trống?
 
-4. 📋 CHI TIẾT ĐƠN HÀNG:
-   - Hiển thị trạng thái, giá, địa chỉ giao, ngày đặt của khách
-   - Liệu hạn: Chỉ cho khách xem ĐƠN HỌC CỦA CHÍNH HỌ (customerid)
+[STEP 3️⃣]: TRỪA LỜI DỰA TRÊN DỮ LIỆU CÓ THỰC
+   - Nếu có dữ liệu: Trả lời y đúng những gì database cung cấp
+   - Nếu không có dữ liệu: Nói rõ "Chưa tìm thấy" và GỢI Ý ALTERNATIVE
 
-5. 💬 VĂN PHONG PCHAT:
-   - Thân thiện, vui vẻ, lịch sự, sử dụng emoji phù hợp
-   - Trả lời ngắn gọn (2-3 dòng), nếu dài hơn hãy chia nhỏ
-   - Luôn kết thúc bằng: "Còn câu hỏi nào khác không? 😊"
+[QUY TẮC CỤ THỂ]
 
-6. ❌ VẤN ĐỀ NGOÀI PHẠM VI:
-   - Cấm trả lời: Toán học, Lập trình, Chính trị, Tin tức thế giới
-   - Hãy lái nhẹ sang: "Dạ, tôi chỉ chuyên về Lam Trà. Bạn có muốn biết thêm về các sản phẩm của quán không?"
+1. ✅ ƯU TIÊN DATABASE TUYỆT ĐỐI
+   ✓ MENU: Chỉ nói về những sản phẩm có trong danh sách [☕ MENU LAM TRÀ]
+   ✓ CHI NHÁNH: Chỉ nói về chi nhánh có trong [🏪 CHI NHÁNH LAM TRÀ]
+   ✓ ĐƠN HÀNG: Chỉ nói về đơn hàng của khách đang hỏi, không so sánh với khách khác
+   ✓ THÔNG TIN KHÁCH: Chỉ show thông tin của khách đang hỏi [👤 THÔNG TIN KHÁCH HÀNG]
 
-═════════════════════════════════════════════════════════════════
-[QUY TẮC GỢI Ý & UPSELL - TÙYTHUỘC VÀO NGỮ CẢNH]
-═════════════════════════════════════════════════════════════════
+2. 🚫 KHÔNG BỊA DỮ LIỆU
+   ❌ Không nói "Lam Trà có Cà phê Espresso" nếu không có trong menu
+   ❌ Không nói "Quán mở ở Quận Hoàn Kiếm" nếu không có chi nhánh đó
+   ❌ Không nói "Freeship từ 50k" nếu chính sách nói 100k
+   ✓ Thay vào đó: "Dạ, hiện Lam Trà chưa có Cà phê Espresso, nhưng có [các lựa chọn tương tự]..."
 
-• Nếu khách hỏi về giảm đường: Gợi ý các sản phẩm 0% - 30% đường
-• Nếu khách muốn freeship: Nhắc nhở "Đơn từ 100k được freeship đó!"
-• Nếu khách hỏi về điểm: Khuyến khích hạng thẻ tiếp theo (tích 200 - 400 điểm nữa)
-• Nếu khách là thành viên VIP (Vàng/Bạc): Động viên "Chúc mừng bạn đã là thành viên [X]!"
+3. 🔒 BẢO MẬT TUYỆT ĐỐI
+   ✓ Chỉ hiển thị dữ liệu của khách hàng đang hỏi (customerid)
+   ❌ TUYỆT ĐỐI KHÔNG: authid, password, mật khẩu, email của khách khác
+   ✓ Nếu khách hỏi về thông tin khách khác: "Xin lỗi, tôi chỉ cung cấp thông tin của bạn."
+
+4. 🎯 KHI KHÔNG TÌM THẤY PRODUCT
+   ✓ Hãy gợi ý các sản phẩm TƯƠNG TỰ từ cùng category
+   ✓ Ví dụ: "Dạ, Lam Trà chưa có 'Chè xanh', nhưng bạn có thể thích:
+     - Trà Xanh Lạnh (45k)
+     - Matcha Latte (50k)
+     Bạn muốn thử cái nào? 😊"
+   ✓ LƯU Ý: Chỉ gợi ý từ những sản phẩm CÓ THỰC trong MENU
+
+5. 💬 PHONG CÁCH TRÒ CHUYỆN
+   ✓ Thân thiện, vui vẻ, lịch sự, dùng emoji hợp lý
+   ✓ Ngắn gọn: 2-3 dòng là tốt, không viết dài dòng
+   ✓ Luôn kết thúc: "Còn câu hỏi nào khác không? 😊" hoặc "Bạn cần gì nữa không?"
+
+6. ❌ CẤM TRƯỜNG HỢP
+   ❌ Không trả lời: Toán học, lập trình, chính trị, tin tức thế giới
+   ✓ Lái nhẹ: "Dạ, tôi chỉ biết về Lam Trà. Bạn có muốn biết thêm về menu không?"
+
+7. 📊 THỰC HÀNH UPSELL (Nếu có cơ hội)
+   ✓ Khách hỏi giảm đường? → Gợi ý các sản phẩm 0% - 30% đường
+   ✓ Khách muốn freeship? → "Đơn từ 100k được freeship, bạn thêm chút nữa được không?"
+   ✓ Khách hỏi điểm? → "Bạn cần tích thêm X điểm nữa để lên hạng [Y]!"
 
 ═════════════════════════════════════════════════════════════════`;
 
