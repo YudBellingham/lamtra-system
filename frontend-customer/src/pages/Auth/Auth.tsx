@@ -15,13 +15,13 @@ const Auth = () => {
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  
+
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [fullname, setFullname] = useState('');
   const [phone, setPhone] = useState('');
   const [birthday, setBirthday] = useState('');
-  const [gender, setGender] = useState(''); 
+  const [gender, setGender] = useState('');
 
   const [isRecovery, setIsRecovery] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -99,7 +99,7 @@ const Auth = () => {
     setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
-    
+
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginPassword,
@@ -135,13 +135,13 @@ const Auth = () => {
 
     // Gọi API Backend để kiểm tra trùng lặp chi tiết
     try {
-      const checkRes = await axios.post('http://localhost:8000/api/auth/check-existence', { 
-        email: regEmail, 
-        phone: phone 
+      const checkRes = await axios.post('${import.meta.env.VITE_API_URL}/api/auth/check-existence', {
+        email: regEmail,
+        phone: phone
       });
-      
+
       const { emailExists, phoneExists } = checkRes.data;
-      
+
       if (emailExists && phoneExists) {
         setErrorMsg('Email và Số điện thoại đã tồn tại trong hệ thống.');
         setLoading(false); return;
@@ -190,21 +190,21 @@ const Auth = () => {
         totalpoints: 0,
         membership: 'Bạc'
       }).select().single();
-      
+
       if (!dbError && insertedCustomer) {
         const { data: welcomeVouchers } = await supabase.from('vouchers').select('*').eq('iswelcome', true);
         if (welcomeVouchers && welcomeVouchers.length > 0) {
-           const insertVouchers = welcomeVouchers.map(v => ({
-             customerid: insertedCustomer.customerid,
-             voucherid: v.voucherid,
-             status: 'Chưa dùng',
-             reason: 'Quà tặng đăng ký mới',
-             receiveddate: new Date().toISOString()
-           }));
-           await supabase.from('customervouchers').insert(insertVouchers);
+          const insertVouchers = welcomeVouchers.map(v => ({
+            customerid: insertedCustomer.customerid,
+            voucherid: v.voucherid,
+            status: 'Chưa dùng',
+            reason: 'Quà tặng đăng ký mới',
+            receiveddate: new Date().toISOString()
+          }));
+          await supabase.from('customervouchers').insert(insertVouchers);
         }
       }
-      
+
       await supabase.auth.signOut();
       sessionStorage.removeItem('isRegistering');
 
@@ -212,7 +212,7 @@ const Auth = () => {
         setErrorMsg('Lỗi khi tạo hồ sơ: ' + dbError.message);
       } else {
         setSuccessMsg('Đăng ký thành công! Hãy đăng nhập ngay.');
-        
+
         setIsLogin(true);
         setLoginEmail('');
         setLoginPassword('');
@@ -239,19 +239,19 @@ const Auth = () => {
   };
 
   const handleResetPassword = async () => {
-     if (!loginEmail) {
-       setErrorMsg('Vui lòng nhập Email để khôi phục mật khẩu.');
-       setTimeout(() => setErrorMsg(''), 4000);
-       return;
-     }
-     const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, { redirectTo: window.location.origin + '/auth' });
-     if (error) {
-       setErrorMsg('Lỗi gửi email khôi phục: ' + error.message);
-       setTimeout(() => setErrorMsg(''), 4000);
-     } else {
-       setSuccessMsg('Đã gửi email khôi phục mật khẩu.');
-       setTimeout(() => setSuccessMsg(''), 4000);
-     }
+    if (!loginEmail) {
+      setErrorMsg('Vui lòng nhập Email để khôi phục mật khẩu.');
+      setTimeout(() => setErrorMsg(''), 4000);
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, { redirectTo: window.location.origin + '/auth' });
+    if (error) {
+      setErrorMsg('Lỗi gửi email khôi phục: ' + error.message);
+      setTimeout(() => setErrorMsg(''), 4000);
+    } else {
+      setSuccessMsg('Đã gửi email khôi phục mật khẩu.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -305,18 +305,18 @@ const Auth = () => {
   return (
     <div className="auth-page">
       <div className="auth-blur-overlay"></div>
-      
+
       <Link to="/" className="back-home-btn">
         <FiChevronLeft /> Quay lại Trang chủ
       </Link>
-      
+
       <div className={`auth-container ${!isLogin ? 'right-panel-active' : ''}`}>
-        
+
         {/* Sign Up Container */}
         <div className="form-container sign-up-container">
           <form onSubmit={handleRegister}>
             <h1 className="form-title">Tạo Tài Khoản</h1>
-            
+
             <div className="form-fields-scroll">
               <div className="input-wrapper">
                 <label>Họ và tên <span className="req">*</span></label>
@@ -334,7 +334,7 @@ const Auth = () => {
                 <label>Mật khẩu <span className="req">*</span></label>
                 <input type="password" placeholder="Mật khẩu (từ 6 ký tự)" required value={regPassword} onChange={e => setRegPassword(e.target.value)} />
               </div>
-              
+
               <div className="input-group">
                 <div className="input-wrapper">
                   <label>Ngày sinh <span className="req">*</span></label>
@@ -355,9 +355,9 @@ const Auth = () => {
             {errorMsg && !isLogin && <div className="error-text" style={{ color: '#d32f2f', fontSize: '13px', marginTop: '10px', background: '#ffebee', padding: '8px', borderRadius: '5px', fontWeight: 600 }}>{errorMsg}</div>}
             {successMsg && !isLogin && <div className="success-text" style={{ color: '#2e7d32', fontSize: '13px', marginTop: '10px', background: '#e8f5e9', padding: '8px', borderRadius: '5px', fontWeight: 600 }}>{successMsg}</div>}
 
-            <button 
-              type="submit" 
-              className="submit-btn" 
+            <button
+              type="submit"
+              className="submit-btn"
               disabled={loading || !regEmail || !phone || !fullname || regPassword.length < 6 || !birthday}
               style={{ opacity: (loading || !regEmail || !phone || !fullname || regPassword.length < 6 || !birthday) ? 0.6 : 1 }}
             >
@@ -375,7 +375,7 @@ const Auth = () => {
               <button type="button" className="social-btn" onClick={() => handleOAuth('google')}><FaGoogle /></button>
             </div>
             <span className="divider">hoặc sử dụng tài khoản của bạn</span>
-            
+
             <div className="input-wrapper">
               <label>Tài khoản <span className="req">*</span></label>
               <input type="text" placeholder="Email" required value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
@@ -386,7 +386,7 @@ const Auth = () => {
             </div>
 
             <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); handleResetPassword(); }}>Quên mật khẩu?</a>
-            
+
             {errorMsg && isLogin && <div className="error-text">{errorMsg}</div>}
             {successMsg && isLogin && <div className="success-text">{successMsg}</div>}
 
@@ -396,16 +396,16 @@ const Auth = () => {
 
         {/* Overlay Container (Sliding door) */}
         <div className="overlay-container">
-          <button 
-            className={`overlay-trigger ${isLogin ? 'active' : ''}`} 
-            onClick={() => {setIsLogin(false); setErrorMsg(''); setSuccessMsg('');}}
+          <button
+            className={`overlay-trigger ${isLogin ? 'active' : ''}`}
+            onClick={() => { setIsLogin(false); setErrorMsg(''); setSuccessMsg(''); }}
             type="button"
           >
             ĐĂNG KÝ
           </button>
-          <button 
-            className={`overlay-trigger ${!isLogin ? 'active' : ''}`} 
-            onClick={() => {setIsLogin(true); setErrorMsg(''); setSuccessMsg('');}}
+          <button
+            className={`overlay-trigger ${!isLogin ? 'active' : ''}`}
+            onClick={() => { setIsLogin(true); setErrorMsg(''); setSuccessMsg(''); }}
             type="button"
           >
             ĐĂNG NHẬP

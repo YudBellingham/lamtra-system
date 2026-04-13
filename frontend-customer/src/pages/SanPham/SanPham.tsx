@@ -51,14 +51,14 @@ const SanPham: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  
+
   const handleCategoryChange = (cat: string | number) => {
     setSelectedCategory(cat);
     setCurrentPage(1);
   };
 
   const handleLabelToggle = (label: string) => {
-    setFilterLabels(prev => 
+    setFilterLabels(prev =>
       prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
     );
     setCurrentPage(1);
@@ -92,7 +92,7 @@ const SanPham: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await axios.get('http://localhost:8000/api/customers/favorites', {
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/customers/favorites', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       setFavProductIds(res.data.products.map((p: any) => p.productid));
@@ -110,9 +110,9 @@ const SanPham: React.FC = () => {
         navigate('/auth');
         return;
       }
-      const res = await axios.post('http://localhost:8000/api/favorites/toggle', 
+      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/favorites/toggle',
         { productId },
-        { headers: { Authorization: `Bearer ${session.access_token}` }}
+        { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       if (res.data.success) {
         if (res.data.isFavorite) {
@@ -132,8 +132,8 @@ const SanPham: React.FC = () => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   };
 
-  let result = selectedCategory === "all" 
-    ? products 
+  let result = selectedCategory === "all"
+    ? products
     : products.filter(p => p.categoryid === selectedCategory);
 
   if (searchQuery.trim() !== "") {
@@ -198,17 +198,17 @@ const SanPham: React.FC = () => {
             </div>
 
             <div className="product-search-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', padding: '0 20px' }}>
-              <input 
-                type="text" 
-                placeholder="Tìm trái cây, trà xanh, matcha..." 
+              <input
+                type="text"
+                placeholder="Tìm trái cây, trà xanh, matcha..."
                 value={searchQuery}
-                onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 style={{ width: '100%', maxWidth: '500px', padding: '12px 20px', borderRadius: '30px', border: '1px solid #ffccd5', fontSize: '15px', outline: 'none', fontFamily: 'Quicksand', boxShadow: '0 4px 12px rgba(216, 27, 96, 0.05)' }}
               />
             </div>
 
             <div className="advanced-filter-wrapper">
-              <button 
+              <button
                 className={`filter-toggle-btn ${showAdvancedFilter ? 'active' : ''}`}
                 onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
               >
@@ -221,26 +221,26 @@ const SanPham: React.FC = () => {
                   <div className="filter-group">
                     <h4 className="filter-title">Theo Nhãn</h4>
                     <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={filterLabels.includes("bestseller")} 
-                        onChange={() => handleLabelToggle("bestseller")} 
+                      <input
+                        type="checkbox"
+                        checked={filterLabels.includes("bestseller")}
+                        onChange={() => handleLabelToggle("bestseller")}
                       /> Sản phẩm bán chạy
                     </label>
                     <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={filterLabels.includes("new")} 
-                        onChange={() => handleLabelToggle("new")} 
+                      <input
+                        type="checkbox"
+                        checked={filterLabels.includes("new")}
+                        onChange={() => handleLabelToggle("new")}
                       /> Sản phẩm mới
                     </label>
                   </div>
 
                   <div className="filter-group">
                     <h4 className="filter-title">Sắp xếp giá</h4>
-                    <select 
-                      className="filter-select" 
-                      value={sortType} 
+                    <select
+                      className="filter-select"
+                      value={sortType}
                       onChange={(e) => { setSortType(e.target.value); setCurrentPage(1); }}
                     >
                       <option value="">Không sắp xếp</option>
@@ -253,36 +253,36 @@ const SanPham: React.FC = () => {
                     <h4 className="filter-title">Khoảng giá</h4>
                     <div className="dual-slider-container">
                       <div className="slider-track-bg"></div>
-                      <div 
-                        className="slider-track" 
-                        style={{ 
-                          left: `${(minPrice / 150000) * 100}%`, 
-                          right: `${100 - (maxPrice / 150000) * 100}%` 
+                      <div
+                        className="slider-track"
+                        style={{
+                          left: `${(minPrice / 150000) * 100}%`,
+                          right: `${100 - (maxPrice / 150000) * 100}%`
                         }}
                       ></div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="150000" 
-                        step="5000" 
-                        value={minPrice} 
+                      <input
+                        type="range"
+                        min="0"
+                        max="150000"
+                        step="5000"
+                        value={minPrice}
                         onChange={(e) => {
                           const val = Math.min(Number(e.target.value), maxPrice - 5000);
                           setMinPrice(val);
                           setCurrentPage(1);
-                        }} 
+                        }}
                       />
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="150000" 
-                        step="5000" 
-                        value={maxPrice} 
+                      <input
+                        type="range"
+                        min="0"
+                        max="150000"
+                        step="5000"
+                        value={maxPrice}
                         onChange={(e) => {
                           const val = Math.max(Number(e.target.value), minPrice + 5000);
                           setMaxPrice(val);
                           setCurrentPage(1);
-                        }} 
+                        }}
                       />
                     </div>
                     <div className="price-display">Từ {formatPrice(minPrice)} - {formatPrice(maxPrice)}</div>
@@ -293,8 +293,8 @@ const SanPham: React.FC = () => {
 
             <div className="product-grid">
               {paginatedProducts.map(product => (
-                <div 
-                  key={product.productid} 
+                <div
+                  key={product.productid}
                   className="product-card"
                   onClick={() => navigate(`/san-pham/${product.productid}`)}
                 >
@@ -309,7 +309,7 @@ const SanPham: React.FC = () => {
                     ) : (
                       <div className="product-image-fallback" />
                     )}
-                    <button 
+                    <button
                       className={`fav-btn ${favProductIds.includes(product.productid) ? 'active' : ''}`}
                       onClick={(e) => handleToggleFavorite(e, product.productid)}
                       style={{
@@ -334,19 +334,19 @@ const SanPham: React.FC = () => {
                       {product.saleprice && product.saleprice < product.baseprice ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ textDecoration: 'line-through', color: '#bbb', fontSize: '0.9em', fontWeight: 'normal' }}>
-                            {product.has_size_l 
-                              ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}` 
+                            {product.has_size_l
+                              ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
                               : formatPrice(product.baseprice)}
                           </span>
                           <span style={{ color: '#d81b60', fontWeight: 'bold' }}>
-                            {product.has_size_l 
-                              ? `${formatPrice(product.saleprice)} - ${formatPrice(product.saleprice + 10000)}` 
+                            {product.has_size_l
+                              ? `${formatPrice(product.saleprice)} - ${formatPrice(product.saleprice + 10000)}`
                               : formatPrice(product.saleprice)}
                           </span>
                         </div>
                       ) : (
-                        product.has_size_l 
-                          ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}` 
+                        product.has_size_l
+                          ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
                           : formatPrice(product.baseprice)
                       )}
                     </div>
@@ -354,7 +354,7 @@ const SanPham: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             {result.length === 0 && (
               <div className="menu-status empty-status">Không tìm thấy sản phẩm phù hợp.</div>
             )}
@@ -362,8 +362,8 @@ const SanPham: React.FC = () => {
             {totalPages > 1 && (
               <div className="pagination-wrapper">
                 {Array.from({ length: totalPages }).map((_, i) => (
-                  <button 
-                    key={i} 
+                  <button
+                    key={i}
                     className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
                     onClick={() => handlePageChange(i + 1)}
                   >
