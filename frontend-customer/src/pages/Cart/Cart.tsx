@@ -82,7 +82,7 @@ const Cart: React.FC = () => {
         if (customer) {
           const { data: cv } = await supabase.from('customervouchers').select('*, vouchers(*)').eq('customerid', customer.customerid).or('status.eq.Chưa dùng,status.is.null');
           if (cv) {
-            const rawVouchers = cv.map(item => item.vouchers).filter(v => v);
+            const rawVouchers = cv?.map(item => item.vouchers)?.filter(v => v);
             const grouped: any = {};
             rawVouchers.forEach(v => {
               if (!grouped[v.voucherid]) {
@@ -150,7 +150,7 @@ const Cart: React.FC = () => {
           const itemTotal = effectiveBasePrice + sizeUpcharge + toppingsTotal;
 
           addToCart({
-            id: `${item.productid}-${item.size}-${item.ice}-${item.sugar}-${item.toppings.map((t: any) => t.name).join('-')}-${Date.now()}-${Math.random()}`,
+            id: `${item.productid}-${item.size}-${item.ice}-${item.sugar}-${item.toppings?.map((t: any) => t.name).join('-')}-${Date.now()}-${Math.random()}`,
             productid: item.productid,
             name: item.product_name,
             imageurl: item.imageurl,
@@ -319,7 +319,7 @@ const Cart: React.FC = () => {
 
   const getOptionsSummary = (item: any) => {
     let summary = `Size ${item.size}, ${item.sugar} Đường, ${item.ice} Đá`;
-    if (item.toppings && item.toppings.length > 0) summary += `, + ${item.toppings.map((t: any) => t.name).join(', ')}`;
+    if (item.toppings && item.toppings.length > 0) summary += `, + ${item.toppings?.map((t: any) => t.name).join(', ')}`;
     if (item.note) summary += `\nLưu ý: ${item.note}`;
     return summary;
   };
@@ -446,7 +446,7 @@ const Cart: React.FC = () => {
                 <FiTag /> ĐẶT NHANH COMBO YÊU THÍCH
               </div>
               <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '3px' }}>
-                {orderTemplates.map(tmp => (
+                {orderTemplates?.map(tmp => (
                   <button
                     key={tmp.templateid}
                     onClick={() => handleReorderTemplate(tmp.orderid)}
@@ -466,7 +466,7 @@ const Cart: React.FC = () => {
             </div>
           )}
           {!isCheckout ? (
-            cart.map((item) => (
+            cart?.map((item) => (
               <div className="cart-item" key={item.id}>
                 <img src={item.imageurl || 'https://via.placeholder.com/100'} alt={item.name} className="cart-item-img" />
                 <div className="cart-item-info">
@@ -532,7 +532,7 @@ const Cart: React.FC = () => {
 
                     {showAddressDropdown && addressSuggestions.length > 0 && (
                       <ul style={{ position: 'absolute', top: '75px', left: 0, right: 0, background: '#fff', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1000, margin: '5px 0 0 0', padding: 0, listStyle: 'none', maxHeight: '200px', overflowY: 'auto' }}>
-                        {addressSuggestions.map(s => (
+                        {addressSuggestions?.map(s => (
                           <li
                             key={s.place_id}
                             onClick={() => handleSelectAddress(s.place_id, s.description)}
@@ -570,7 +570,7 @@ const Cart: React.FC = () => {
                   <h2 className="checkout-heading">Chọn chi nhánh</h2>
                   <select onChange={handleBranchChange} value={selectedBranchId} style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '8px', width: '100%' }}>
                     <option value="">Chọn chi nhánh mà bạn muốn đến lấy *</option>
-                    {branches.map(b => <option key={b.branchid} value={b.branchid}>{b.name} - {b.address}</option>)}
+                    {branches?.map(b => <option key={b.branchid} value={b.branchid}>{b.name} - {b.address}</option>)}
                   </select>
                   {branchError && (
                     <p style={{ color: '#d32f2f', background: '#ffebee', padding: '10px', borderRadius: '8px', marginTop: '10px', fontSize: '14px', fontWeight: 'bold' }}>{branchError}</p>
@@ -592,7 +592,7 @@ const Cart: React.FC = () => {
               {orderType === 'Giao hàng' && deliveryBranchesInfo.length > 0 && (
                 <div className="delivery-branch-options" style={{ marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #eee' }}>
                   <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '16px', color: '#333' }}>Tùy chọn chi nhánh phục vụ</h3>
-                  {deliveryBranchesInfo.map((opt, index) => {
+                  {deliveryBranchesInfo?.map((opt, index) => {
                     const cap = opt.capability;
                     const isSelected = selectedDeliveryBranchId === opt.branch.branchid;
 
@@ -760,7 +760,7 @@ const Cart: React.FC = () => {
                   if (aEligible && !bEligible) return -1;
                   if (!aEligible && bEligible) return 1;
                   return 0;
-                }).map((v, i) => {
+                })?.map((v, i) => {
                   const isEligible = cartTotal >= (v.minordervalue || 0);
                   return (
                     <div key={i} style={{

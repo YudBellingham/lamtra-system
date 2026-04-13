@@ -18,7 +18,7 @@ const TinTucList: React.FC<TinTucListProps> = ({ tintucs }) => {
   return (
     <div className="tintuc-list-container">
       <div className="tintuc-list">
-        {tintucs.map((item) => (
+        {tintucs?.map((item) => (
           <TinTucCard
             key={item.id}
             tintuc={item}

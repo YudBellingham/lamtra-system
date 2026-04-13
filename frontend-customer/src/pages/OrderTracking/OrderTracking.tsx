@@ -144,7 +144,7 @@ const OrderTracking: React.FC = () => {
   };
 
   const handleUpdateReview = (index: number, key: string, value: any) => {
-    setReviewsData(prev => prev.map((r, idx) => idx === index ? { ...r, [key]: value } : r));
+    setReviewsData(prev => prev?.map((r, idx) => idx === index ? { ...r, [key]: value } : r));
   };
 
   const handleSubmitReview = async () => {
@@ -171,7 +171,7 @@ const OrderTracking: React.FC = () => {
 
       const customerId = customerData.customerid;
 
-      const payload = reviewsData.map(r => ({
+      const payload = reviewsData?.map(r => ({
         customerid: customerId,
         orderid: id,
         productid: r.productid,
@@ -253,7 +253,7 @@ const OrderTracking: React.FC = () => {
 
         {(!isCanceled && !isPendingPay) && (
           <div className="stepper-wrapper">
-            {STEPS.map((step, index) => {
+            {STEPS?.map((step, index) => {
               const isActive = index <= currentStep;
               return (
                 <div key={step} className={`stepper-item ${isActive ? 'active' : ''}`}>
@@ -269,7 +269,7 @@ const OrderTracking: React.FC = () => {
 
         <div className="order-items-list">
           <h3>Món đã đặt</h3>
-          {details.map((item) => (
+          {details?.map((item) => (
             <div key={item.orderdetailid} className="tracking-item">
               <img src={item.products?.imageurl || 'https://via.placeholder.com/60'} alt="product" />
               <div className="tracking-item-info">
@@ -361,14 +361,14 @@ const OrderTracking: React.FC = () => {
             <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '15px' }}>Đánh giá Đơn hàng #{order.orderid}</h3>
 
             <div className="review-items-container" style={{ textAlign: 'left', marginTop: '20px' }}>
-              {reviewsData.map((rev, index) => (
+              {reviewsData?.map((rev, index) => (
                 <div key={index} className="review-item-box" style={{ marginBottom: '25px', paddingBottom: '20px', borderBottom: index < reviewsData.length - 1 ? '1px dashed #ccc' : 'none' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: rev.productid ? '#d81b60' : '#222', fontSize: rev.productid ? '16px' : '18px' }}>
                     {rev.productid ? `Món ăn: ${rev.name}` : rev.name}
                   </h4>
 
                   <div className="star-rating" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
+                    {[1, 2, 3, 4, 5]?.map(star => (
                       <FaStar
                         key={star}
                         size={28}

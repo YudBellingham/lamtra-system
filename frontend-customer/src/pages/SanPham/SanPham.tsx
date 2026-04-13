@@ -59,7 +59,7 @@ const SanPham: React.FC = () => {
 
   const handleLabelToggle = (label: string) => {
     setFilterLabels(prev =>
-      prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+      prev.includes(label) ? prev?.filter(l => l !== label) : [...prev, label]
     );
     setCurrentPage(1);
   };
@@ -95,7 +95,7 @@ const SanPham: React.FC = () => {
       const res = await axios.get('${import.meta.env.VITE_API_URL}/api/customers/favorites', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
-      setFavProductIds(res.data.products.map((p: any) => p.productid));
+      setFavProductIds(res.data.products?.map((p: any) => p.productid));
     } catch (err) {
       console.error("Lỗi fetch favorites:", err);
     }
@@ -119,7 +119,7 @@ const SanPham: React.FC = () => {
           setFavProductIds([...favProductIds, productId]);
           toast.success("Đã thêm vào yêu thích!");
         } else {
-          setFavProductIds(favProductIds.filter(id => id !== productId));
+          setFavProductIds(favProductIds?.filter(id => id !== productId));
           toast("Đã bỏ yêu thích");
         }
       }
@@ -134,18 +134,18 @@ const SanPham: React.FC = () => {
 
   let result = selectedCategory === "all"
     ? products
-    : products.filter(p => p.categoryid === selectedCategory);
+    : products?.filter(p => p.categoryid === selectedCategory);
 
   if (searchQuery.trim() !== "") {
     const query = removeAccents(searchQuery);
-    result = result.filter(p => removeAccents(p.name).includes(query));
+    result = result?.filter(p => removeAccents(p.name).includes(query));
   }
 
   if (filterLabels.length > 0) {
-    result = result.filter(p => p.label && filterLabels.includes(p.label.toLowerCase()));
+    result = result?.filter(p => p.label && filterLabels.includes(p.label.toLowerCase()));
   }
 
-  result = result.filter(p => p.baseprice >= minPrice && p.baseprice <= maxPrice);
+  result = result?.filter(p => p.baseprice >= minPrice && p.baseprice <= maxPrice);
 
   if (sortType) {
     result = [...result].sort((a, b) => {
@@ -185,7 +185,7 @@ const SanPham: React.FC = () => {
                 >
                   Tất cả
                 </button>
-                {categories.map(cat => (
+                {categories?.map(cat => (
                   <button
                     key={cat.categoryid}
                     className={`category-pill ${selectedCategory === cat.categoryid ? "active" : ""}`}
@@ -292,7 +292,7 @@ const SanPham: React.FC = () => {
             </div>
 
             <div className="product-grid">
-              {paginatedProducts.map(product => (
+              {paginatedProducts?.map(product => (
                 <div
                   key={product.productid}
                   className="product-card"
@@ -361,7 +361,7 @@ const SanPham: React.FC = () => {
 
             {totalPages > 1 && (
               <div className="pagination-wrapper">
-                {Array.from({ length: totalPages }).map((_, i) => (
+                {Array.from({ length: totalPages })?.map((_, i) => (
                   <button
                     key={i}
                     className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}

@@ -51,7 +51,7 @@ const TuyenDungDetail: React.FC = () => {
         }
 
         if (data) {
-          const filtered = data.filter((branch: Store) => {
+          const filtered = data?.filter((branch: Store) => {
             const addr = branch.address.toLowerCase();
             if (isHanoi) {
               return addr.includes("hà nội") || addr.includes("ha noi");
@@ -74,7 +74,7 @@ const TuyenDungDetail: React.FC = () => {
   const handleStoreToggle = (branchid: number) => {
     setSelectedStores(prev =>
       prev.includes(branchid)
-        ? prev.filter(id => id !== branchid)
+        ? prev?.filter(id => id !== branchid)
         : [...prev, branchid]
     );
   };
@@ -99,7 +99,7 @@ const TuyenDungDetail: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const selectedStoreNames = selectedStores.map(id => {
+      const selectedStoreNames = selectedStores?.map(id => {
         const store = storeList.find(s => s.branchid === id);
         return store ? `${store.address} - ${store.name}` : id.toString();
       });
@@ -278,7 +278,7 @@ const TuyenDungDetail: React.FC = () => {
                         <p style={{ color: '#d81b60', fontSize: '14px', fontStyle: 'italic' }}>Hiện khu vực này chưa có cửa hàng nào được cập nhật.</p>
                       ) : (
                         <div className="checkbox-list">
-                          {storeList.map(store => (
+                          {storeList?.map(store => (
                             <label key={store.branchid} className="checkbox-item">
                               <input
                                 type="checkbox"

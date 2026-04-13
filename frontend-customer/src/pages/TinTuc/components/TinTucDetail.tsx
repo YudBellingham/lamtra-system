@@ -37,7 +37,7 @@ const TinTucDetailComponent: React.FC<TinTucDetailProps> = ({ tintuc }) => {
       </div>
 
       <div className="tintuc-detail-content">
-        {tintuc.content.split("\n").map((paragraph, index) => (
+        {tintuc.content.split("\n")?.map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
       </div>
