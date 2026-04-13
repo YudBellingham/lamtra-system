@@ -47,9 +47,9 @@ const CuaHang: React.FC = () => {
         if (data) {
           data.forEach((branch: Store) => {
             const addr = branch.address.toLowerCase();
-            if (addr.includes("hà nội") || addr.includes("ha noi")) {
+            if (addr?.includes("hà nội") || addr?.includes("ha noi")) {
               hnStores.push(branch);
-            } else if (addr.includes("hồ chí minh") || addr.includes("ho chi minh") || addr.includes("tp. hcm") || addr.includes("tphcm")) {
+            } else if (addr?.includes("hồ chí minh") || addr?.includes("ho chi minh") || addr?.includes("tp. hcm") || addr?.includes("tphcm")) {
               hcmStores.push(branch);
             }
           });

@@ -97,7 +97,7 @@ const Profile = () => {
 
       const [vouchersRes, historyRes, myVouchersRes] = await Promise.all([
         supabase.from('vouchers').select('*').gt('pointsrequired', 0).eq('iswelcome', false).order('pointsrequired', { ascending: true }),
-        axios.get('${import.meta.env.VITE_API_URL}/api/customers/point-history', { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/customers/point-history`, { headers }),
         supabase.from('customervouchers').select('*, vouchers(*)').eq('customerid', customerId).or('status.eq.Chưa dùng,status.is.null')
       ]);
       setVouchers(vouchersRes.data || []);
@@ -232,7 +232,7 @@ const Profile = () => {
     setSuccessMsg('');
 
     try {
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/customers/update-profile', {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/customers/update-profile`, {
         customerId: customer.customerid,
         fullname: editForm.fullname,
         email: editForm.email,
@@ -258,7 +258,7 @@ const Profile = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/customers/favorites', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       setFavorites(res.data);
@@ -286,7 +286,7 @@ const Profile = () => {
     e.stopPropagation();
     setReorderLoading(orderId);
     try {
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/orders/reorder', { orderid: orderId });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/reorder`, { orderid: orderId });
       if (res.data.success) {
         const { reorderCart, hasMissingItems } = res.data;
         let addedCount = 0;
@@ -321,7 +321,7 @@ const Profile = () => {
     setIsSavingTemplate(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/orders/template/save',
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/template/save`,
         { orderId: templateOrderId, templateName: templateNameInput },
         { headers: { Authorization: `Bearer ${session?.access_token}` } }
       );

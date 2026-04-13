@@ -54,9 +54,9 @@ const TuyenDungDetail: React.FC = () => {
           const filtered = data?.filter((branch: Store) => {
             const addr = branch.address.toLowerCase();
             if (isHanoi) {
-              return addr.includes("hà nội") || addr.includes("ha noi");
+              return addr?.includes("hà nội") || addr?.includes("ha noi");
             } else {
-              return addr.includes("hồ chí minh") || addr.includes("ho chi minh") || addr.includes("tp. hcm") || addr.includes("tphcm");
+              return addr?.includes("hồ chí minh") || addr?.includes("ho chi minh") || addr?.includes("tp. hcm") || addr?.includes("tphcm");
             }
           });
           setStoreList(filtered);
@@ -73,7 +73,7 @@ const TuyenDungDetail: React.FC = () => {
 
   const handleStoreToggle = (branchid: number) => {
     setSelectedStores(prev =>
-      prev.includes(branchid)
+      prev?.includes(branchid)
         ? prev?.filter(id => id !== branchid)
         : [...prev, branchid]
     );
@@ -283,7 +283,7 @@ const TuyenDungDetail: React.FC = () => {
                               <input
                                 type="checkbox"
                                 value={store.branchid}
-                                checked={selectedStores.includes(store.branchid)}
+                                checked={selectedStores?.includes(store.branchid)}
                                 onChange={() => handleStoreToggle(store.branchid)}
                               />
                               <span>{store.address} - {store.name}</span>

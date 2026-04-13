@@ -195,7 +195,7 @@ const OrderTracking: React.FC = () => {
   const handleReorder = async () => {
     setReorderLoading(true);
     try {
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/orders/reorder', { orderid: id });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/reorder`, { orderid: id });
       if (res.data.success) {
         const { reorderCart, hasMissingItems } = res.data;
         let addedCount = 0;
