@@ -159,6 +159,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const { Resend } = require('resend');
+const resendInstance = new Resend(process.env.RESEND_API_KEY);
+
 app.post('/api/send-application', async (req, res) => {
     try {
         const { fullName, phone, dob, email, selectedStores, canRotate, startDate, otherDesires, location } = req.body;
@@ -169,19 +172,9 @@ app.post('/api/send-application', async (req, res) => {
 
         const storesString = Array.isArray(selectedStores) ? selectedStores.join(', ') : (selectedStores || '');
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: process.env.SMTP_PORT || 465,
-            secure: true,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: `"Hệ Thống Lam Trà" <${process.env.SMTP_USER}>`,
-            to: process.env.SMTP_RECEIVER || 'lamtradamvingon@gmail.com',
+        const { data, error } = await resendInstance.emails.send({
+            from: 'Lam Tra System <onboarding@resend.dev>',
+            to: [process.env.SMTP_RECEIVER || 'lamtradamvingon@gmail.com'],
             replyTo: `${fullName} <${email}>`,
             subject: `Đơn Ứng Tuyển Mới - ${fullName} - Khu vực ${location || 'Chưa rõ'}`,
             html: `
@@ -227,16 +220,21 @@ app.post('/api/send-application', async (req, res) => {
                 </table>
             </div>
             <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777;">
-                <p style="margin: 0;">Email được gửi tự động từ Website Liên hệ Hệ thống Lam Trà.</p>
+                <p style="margin: 0;">Email được gửi tự động từ Website Hệ thống Lam Trà qua Resend API.</p>
             </div>
         </div>
       `
-        };
+        });
 
-        await transporter.sendMail(mailOptions);
-        res.json({ status: 'success', message: 'Email đã được gửi' });
+        if (error) {
+            console.error("Resend Error:", error);
+            return res.status(500).json({ status: 'error', message: 'Lỗi Resend: ' + error.message });
+        }
+
+        res.json({ status: 'success', message: 'Email ứng tuyển đã được gửi thành công!', data });
     } catch (error) {
-        res.status(500).json({ status: 'error', message: 'Không thể gửi thư. ' + error.message });
+        console.error("Internal Server Error:", error);
+        res.status(500).json({ status: 'error', message: 'Lỗi hệ thống: ' + error.message });
     }
 });
 
