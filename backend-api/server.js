@@ -272,13 +272,13 @@ app.post('/api/create_payment_url', (req, res) => {
     try {
         const { amount, orderInfo, orderId } = req.body;
 
-        const tmnCode = process.env.vnp_TmnCode;
-        const secretKey = process.env.vnp_HashSecret.trim(); // VẤN ĐỀ 1: Trim khoảng trắng
-        const vnpUrl = process.env.vnp_Url;
-        const returnUrl = process.env.vnp_ReturnUrl;
+        const tmnCode = vnp_Config.vnp_TmnCode;
+        const secretKey = (vnp_Config.vnp_HashSecret || "").trim();
+        const vnpUrl = vnp_Config.vnp_Url;
+        const returnUrl = vnp_Config.vnp_ReturnUrl;
 
         if (!tmnCode || !secretKey || !vnpUrl || !returnUrl) {
-            return res.status(500).json({ error: 'Cấu hình VNPay không hợp lệ hoặc thiếu trong .env' });
+            return res.status(500).json({ error: 'Cấu hình VNPay không hợp lệ hoặc thiếu trong .env (TMNCODE, HASHSECRET, URL, RETURNURL)' });
         }
 
         const date = new Date();
