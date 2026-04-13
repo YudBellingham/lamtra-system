@@ -773,7 +773,7 @@ app.post('/api/orders/template/save', async (req, res) => {
     }
 });
 
-// 5. Lấy danh sách Yêu thích & Đơn mẫu
+// 5. Lấy danh sách Yêu thích & Đơn mẫu (Mở rộng để lấy chi tiết món)
 app.get('/api/customers/favorites', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -785,13 +785,63 @@ app.get('/api/customers/favorites', async (req, res) => {
 
         const [favProducts, favTemplates] = await Promise.all([
             supabase.from('product_favorites').select('*, products(*)').eq('customerid', cust.customerid),
-            supabase.from('order_templates').select('*, orders(*)').eq('customerid', cust.customerid)
+            supabase.from('order_templates')
+                .select(`
+                    *,
+                    orders (
+                        *,
+                        orderdetails (
+                            *,
+                            products (*),
+                            ordertoppings (
+                                *,
+                                toppings (*)
+                            )
+                        )
+                    )
+                `)
+                .eq('customerid', cust.customerid)
         ]);
 
         res.json({
             products: favProducts.data || [],
             templates: favTemplates.data || []
         });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 6. Lấy lịch sử đơn hàng kèm trạng thái đã lưu template
+app.get('/api/customers/order-history', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Unauthorized' });
+        const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+        if (authErr || !user) return res.status(401).json({ error: 'Auth failed' });
+
+        const { data: cust } = await supabase.from('customers').select('customerid').eq('authid', user.id).single();
+
+        // Lấy orders kèm check tồn tại trong order_templates
+        const { data: orders, error } = await supabase
+            .from('orders')
+            .select(`
+                *,
+                order_templates (templateid)
+            `)
+            .eq('customerid', cust.customerid)
+            .order('orderdate', { ascending: false });
+
+        if (error) throw error;
+
+        // Map lại để có flag is_saved_template đơn giản
+        const formattedOrders = orders?.map(o => ({
+            ...o,
+            is_saved_template: o.order_templates && o.order_templates.length > 0,
+            order_templates: undefined // Xóa bớt data thừa
+        }));
+
+        res.json(formattedOrders || []);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

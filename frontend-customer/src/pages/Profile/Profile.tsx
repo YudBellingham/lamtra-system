@@ -6,6 +6,7 @@ import { Coins, Crown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useCart } from '../../context/CartContext';
+import ComboDetailModal from '../../components/ComboDetailModal/ComboDetailModal';
 import './styles/Profile.css';
 
 const Profile = () => {
@@ -51,6 +52,8 @@ const Profile = () => {
   const [templateOrderId, setTemplateOrderId] = useState('');
   const [templateNameInput, setTemplateNameInput] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [selectedTemplateForDetail, setSelectedTemplateForDetail] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -123,8 +126,18 @@ const Profile = () => {
 
   const fetchOrders = async (customerId: number) => {
     setLoadingData(true);
-    const { data } = await supabase.from('orders').select('*').eq('customerid', customerId).order('orderdate', { ascending: false });
-    setOrders(data || []);
+    try {
+      const { data: { session: currSession } } = await supabase.auth.getSession();
+      const headers = currSession?.access_token ? { Authorization: `Bearer ${currSession.access_token}` } : {};
+      
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/order-history`, { headers });
+      setOrders(res.data || []);
+    } catch (e) {
+      console.error("Lỗi fetch order history:", e);
+      // Fallback nếu API lỗi
+      const { data } = await supabase.from('orders').select('*').eq('customerid', customerId).order('orderdate', { ascending: false });
+      setOrders(data || []);
+    }
     setLoadingData(false);
   };
 
@@ -397,7 +410,15 @@ const Profile = () => {
           {!isEditingInfo ? (
             <div className="value">{customer?.phone || 'Chưa cập nhật'}</div>
           ) : (
-            <input type="tel" className="profile-edit-input" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+            <input 
+              type="tel" 
+              className="profile-edit-input" 
+              value={editForm.phone} 
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, ''); // Loại bỏ chữ
+                if (val.length <= 10) setEditForm({ ...editForm, phone: val });
+              }} 
+            />
           )}
         </div>
         <div className="info-card">
@@ -636,18 +657,28 @@ const Profile = () => {
                 )}
 
                 {o.status === 'Hoàn thành' && (
-                  <button
-                    className="btn-view-order"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTemplateOrderId(o.orderid);
-                      setTemplateNameInput(`Đơn mẫu ${new Date(o.orderdate).toLocaleDateString('vi-VN')}`);
-                      setShowTemplateModal(true);
-                    }}
-                    style={{ background: '#fff9e6', color: '#f57c00', border: '1px solid #ffe082' }}
-                  >
-                    Lưu đơn mẫu
-                  </button>
+                  o.is_saved_template ? (
+                    <button
+                      className="btn-view-order"
+                      disabled
+                      style={{ background: '#f0f0f0', color: '#888', border: '1px solid #ddd', cursor: 'default' }}
+                    >
+                      Đã lưu đơn mẫu
+                    </button>
+                  ) : (
+                    <button
+                      className="btn-view-order"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTemplateOrderId(o.orderid);
+                        setTemplateNameInput(`Đơn mẫu ${new Date(o.orderdate).toLocaleDateString('vi-VN')}`);
+                        setShowTemplateModal(true);
+                      }}
+                      style={{ background: '#fff9e6', color: '#f57c00', border: '1px solid #ffe082' }}
+                    >
+                      Lưu đơn mẫu
+                    </button>
+                  )
                 )}
                 <button
                   className="btn-view-order"
@@ -708,19 +739,44 @@ const Profile = () => {
       <div className="order-list">
         {favorites.templates?.map(tmp => (
           <div key={tmp.templateid} className="order-item" style={{ borderLeft: '5px solid #ffcc00' }}>
-            <div className="o-header">
-              <span className="o-id">{tmp.templatename}</span>
-              <button
-                style={{ background: '#fff9e6', color: '#f57c00', border: '1px solid #ffe082', padding: '5px 12px', borderRadius: '15px', fontSize: '12px', cursor: 'pointer' }}
-                onClick={() => handleReorder(new MouseEvent('click') as any, tmp.orderid)}
-              >
-                Đặt nhanh combo này
-              </button>
+            <div className="o-header" style={{ alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <span className="o-id" style={{ display: 'block', marginBottom: '5px' }}>{tmp.templatename}</span>
+                <span style={{ fontSize: '12px', color: '#888' }}>Mô tả: {tmp.orders?.orderdetails?.length || 0} món trong combo</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  style={{ background: '#fff9e6', color: '#f57c00', border: '1px solid #ffe082', padding: '5px 12px', borderRadius: '15px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+                  onClick={() => handleReorder(new MouseEvent('click') as any, tmp.orderid)}
+                >
+                  Đặt nhanh
+                </button>
+                <button
+                  style={{ background: '#f0f4ff', color: '#3366cc', border: '1px solid #cce0ff', padding: '5px 12px', borderRadius: '15px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+                  onClick={() => {
+                    setSelectedTemplateForDetail(tmp);
+                    setIsDetailModalOpen(true);
+                  }}
+                >
+                  Xem chi tiết
+                </button>
+              </div>
             </div>
           </div>
         ))}
         {favorites.templates.length === 0 && <p className="empty-text">Bạn chưa có đơn hàng mẫu nào.</p>}
       </div>
+
+      {/* Modal chi tiết combo */}
+      <ComboDetailModal 
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        template={selectedTemplateForDetail}
+        onAddToCart={(oid) => {
+          setIsDetailModalOpen(false);
+          handleReorder(new MouseEvent('click') as any, oid);
+        }}
+      />
     </div>
   );
 

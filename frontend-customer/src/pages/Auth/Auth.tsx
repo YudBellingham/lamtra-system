@@ -328,7 +328,16 @@ const Auth = () => {
               </div>
               <div className="input-wrapper">
                 <label>Số điện thoại <span className="req">*</span></label>
-                <input type="tel" placeholder="Số điện thoại" required value={phone} onChange={e => setPhone(e.target.value)} />
+                <input 
+                  type="tel" 
+                  placeholder="Số điện thoại" 
+                  required 
+                  value={phone} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, ''); // Chỉ cho phép số
+                    if (val.length <= 10) setPhone(val);
+                  }} 
+                />
               </div>
               <div className="input-wrapper">
                 <label>Mật khẩu <span className="req">*</span></label>
