@@ -172,298 +172,77 @@ const TABLE_DESCRIPTORS = {
   },
 };
 
-// Function để AI analyze và suggest cần query bảng nào
-async function analyzeQueryNeedsWithAI(prompt, customerid = null) {
-  try {
-    const analysisPrompt = `
-Bạn là chuyên gia phân tích dữ liệu. Dựa trên câu hỏi của khách: "${prompt}"
-
-Hãy xác định câu hỏi này cần dữ liệu từ bảng nào trong số:
-1. customers - Thông tin khách hàng (điểm, hạng, tài khoản)
-2. orders - Lịch sử đơn hàng (đơn hàng, trạng thái)  
-3. products - Menu sản phẩm (món, giá, danh mục)
-4. branches - Chi nhánh (địa chỉ, giờ mở)
-
-Trả lời NGẮN GỌN theo format: "TABLES: [bảng1, bảng2]"
-Ví dụ: "TABLES: products, categories" hoặc "TABLES: customers"
-`;
-
-    const response = await groq.chat.completions.create({
-      messages: [{ role: "user", content: analysisPrompt }],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.3,
-      max_tokens: 100,
-    });
-
-    const responseText = response.choices[0]?.message?.content || "";
-    const tableMatch = responseText.match(/TABLES:\s*\[(.*?)\]/i);
-    const suggestedTables = tableMatch
-      ? tableMatch[1]
-          .split(",")
-          .map((t) => t.trim().toLowerCase())
-          .filter((t) => Object.keys(TABLE_DESCRIPTORS).includes(t))
-      : [];
-
-    return suggestedTables.length > 0
-      ? suggestedTables
-      : ["products", "branches"]; // Default fallback
-  } catch (err) {
-    console.warn("⚠️ Lỗi khi analyze query:", err.message);
-    return ["products"]; // Safe fallback
-  }
-}
-
-// ==================== UTILITY: Extract phone number from prompt ====================
-function extractPhoneNumber(text) {
-  const phoneRegex = /\b([0-9]{10})\b/; // 10 chữ số liên tiếp
-  const match = text.match(phoneRegex);
-  return match ? match[1] : null;
-}
-
-// BƯỚC 1: DYNAMIC CONTEXT RETRIEVAL (AI-Driven, No Manual If-Else)
+// ==================== DYNAMIC CONTEXT RETRIEVAL (SIMPLE & STABLE) ====================
 async function retrieveDynamicContext(prompt, customerid = null) {
   let contextData = "\n═══════════════════════════════════════";
-  contextData += "\n[📊 SCHEMA AVAILABLE]";
-  contextData += `\n${DATABASE_SCHEMA}`;
-  contextData += `\n${LAMTRA_KNOWLEDGE}`;
-
-  // 🔑 Cờ để kiểm tra xem có tìm được customer data hay không
-  let hasCustomerData = false;
+  contextData += "\n[📊 KIẾN THỨC NỀN TẢNG LAM TRÀ]";
+  contextData += `\n${LAMTRA_KNOWLEDGE}\n`;
 
   try {
-    // ✅ STEP 1: Dùng AI để analyze câu hỏi và xác định cần query bảng nào
-    console.log("🧠 Analyzing query with AI...");
-    const suggestedTables = await analyzeQueryNeedsWithAI(prompt, customerid);
-    console.log(`   → Suggested tables: ${suggestedTables.join(", ")}`);
+    // 1. LUÔN LUÔN LẤY MENU (Bỏ join bảng categories để tránh lỗi sập ngầm)
+    const { data: products, error: prodErr } = await supabase
+      .from("products")
+      .select("name, baseprice, description")
+      .eq("isactive", true);
 
-    // ✅ STEP 2: Fetch dữ liệu từ các bảng được suggest
-    const fetchedData = {};
-
-    // 🔍 LƯU Ý: Tìm kiếm khách hàng bằng số điện thoại nếu không có customerid
-    let effectiveCustomerId = customerid;
-    if (suggestedTables.includes("customers")) {
-      // Thử tìm số điện thoại trong prompt
-      const phoneFromPrompt = extractPhoneNumber(prompt);
-      if (phoneFromPrompt && !customerid) {
-        console.log(
-          `📞 Phát hiện số điện thoại trong prompt: ${phoneFromPrompt}`,
-        );
-        try {
-          const { data: customerByPhone } = await supabase
-            .from("customers")
-            .select(
-              "customerid, fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
-            )
-            .eq("phone", phoneFromPrompt)
-            .single();
-          if (customerByPhone) {
-            effectiveCustomerId = customerByPhone.customerid;
-            fetchedData.customer = customerByPhone;
-            hasCustomerData = true;
-            console.log(
-              `✅ Tìm thấy khách hàng từ số điện thoại: ${customerByPhone.fullname}`,
-            );
-          }
-        } catch (err) {
-          console.warn(
-            "⚠️ Không tìm thấy khách hàng bằng số điện thoại:",
-            err.message,
-          );
-        }
-      }
-
-      // Nếu có customerid hoặc vừa tìm thấy từ phone
-      if (effectiveCustomerId && !fetchedData.customer) {
-        try {
-          const { data } = await supabase
-            .from("customers")
-            .select(
-              "fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
-            )
-            .eq("customerid", effectiveCustomerId)
-            .single();
-          if (data) {
-            fetchedData.customer = data;
-            hasCustomerData = true;
-          }
-        } catch (err) {
-          console.warn("⚠️ Lỗi lấy customer:", err.message);
-        }
-      }
-
-      // 🚫 Nếu không tìm được customer data: thêm cảnh báo
-      if (!hasCustomerData && suggestedTables.includes("customers")) {
-        contextData += "\n\n[⚠️ HỆ THỐNG CẢNH BÁO]";
-        contextData +=
-          "\nKhách chưa đăng nhập và chưa cung cấp số điện thoại hợp lệ.";
-        contextData +=
-          "\nTUYỆT ĐỐI KHÔNG ĐƯỢC ĐOÁN SỐ ĐIỂM, SỐ ĐIỆN THOẠI hoặc HẠNG THẺ của khách.";
-        contextData +=
-          "\nHãy yêu cầu khách đăng nhập lại hoặc cung cấp số điện thoại.";
-      }
+    if (prodErr) console.error("❌ LỖI LẤY MENU:", prodErr.message);
+    if (products && products.length > 0) {
+      contextData += `\n[☕ MENU LAM TRÀ (LUÔN CÓ SẴN)]`;
+      products.forEach((p) => {
+        contextData += `\n- ${p.name}: ${p.baseprice}đ (Mô tả: ${p.description || "Không có"})`;
+      });
     }
 
-    // Nếu AI suggest lấy order info
-    if (suggestedTables.includes("orders") && effectiveCustomerId) {
-      try {
-        const { data } = await supabase
-          .from("orders")
-          .select("orderid, status, finalamount, orderdate, address_detail")
-          .eq("customerid", effectiveCustomerId)
-          .order("orderdate", { ascending: false })
-          .limit(10);
-        if (data && data.length > 0) {
-          fetchedData.orders = data;
-        }
-      } catch (err) {
-        console.warn("⚠️ Lỗi lấy orders:", err.message);
-      }
+    // 2. KIỂM TRA KHÁCH HÀNG
+    let foundCustomer = null;
+    let phoneInPrompt = prompt.match(/\b([0-9]{10})\b/);
+
+    if (customerid) {
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("customerid", customerid)
+        .single();
+      if (data) foundCustomer = data;
+    } else if (phoneInPrompt) {
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("phone", phoneInPrompt[0])
+        .single();
+      if (data) foundCustomer = data;
     }
 
-    // Nếu AI suggest lấy product info - LẤY TOÀN BỘ MENU + TÌM KIẾM CỤ THỂ
-    if (suggestedTables.includes("products")) {
-      try {
-        // 📌 Fetch toàn bộ menu
-        let { data } = await supabase
-          .from("products")
-          .select(
-            "productid, name, baseprice, description, imageurl, isactive, categories(categoryid, name)",
-          )
-          .eq("isactive", true);
+    // 3. XỬ LÝ THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG
+    if (foundCustomer) {
+      contextData += `\n\n[👤 THÔNG TIN KHÁCH HÀNG ĐANG CHAT]
+Tên: ${foundCustomer.fullname}
+Điện thoại: ${foundCustomer.phone}
+Hạng thẻ: ${foundCustomer.membership || "Chưa có"}
+Điểm hiện có: ${foundCustomer.totalpoints || 0}`;
 
-        // 🔍 TỐI ƯU: Tìm kiếm à việc khách đang hỏi về món ăn cụ thể nào
-        // Nếu prompt có chứa từ khóa, sắp xếp để những món khớp lên đầu
-        const displayedProducts = [];
-        const keywords = prompt
-          .toLowerCase()
-          .split(/[\s,]+/)
-          .filter((w) => w.length > 2);
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("orderid, status, finalamount, orderdate")
+        .eq("customerid", foundCustomer.customerid)
+        .order("orderdate", { ascending: false })
+        .limit(5);
 
-        if (data && data.length > 0 && keywords.length > 0) {
-          // Phân loại sản phẩm: có khớp từ khóa hay không
-          const matchedProducts = [];
-          const unmatchedProducts = [];
-
-          data.forEach((p) => {
-            const productName = p.name.toLowerCase();
-            const description = (p.description || "").toLowerCase();
-            const isMatched = keywords.some(
-              (kw) => productName.includes(kw) || description.includes(kw),
-            );
-            if (isMatched) {
-              matchedProducts.push(p);
-            } else {
-              unmatchedProducts.push(p);
-            }
-          });
-
-          // Lôi những món khớp lên đầu context
-          displayedProducts.push(...matchedProducts, ...unmatchedProducts);
-          console.log(
-            `🔍 Tìm thấy ${matchedProducts.length} sản phẩm khớp từ khóa`,
-          );
-        } else {
-          displayedProducts.push(...(data || []));
-        }
-
-        if (displayedProducts.length > 0) {
-          fetchedData.products = displayedProducts;
-        }
-      } catch (err) {
-        console.warn("⚠️ Lỗi lấy products:", err.message);
+      if (orders && orders.length > 0) {
+        contextData += `\n\n[🛒 5 ĐƠN HÀNG GẦN NHẤT CỦA KHÁCH NÀY]`;
+        orders.forEach((o) => {
+          contextData += `\n- Đơn #${o.orderid} (${new Date(o.orderdate).toLocaleDateString()}): ${o.status}, Tổng: ${o.finalamount}đ`;
+        });
       }
-    }
-
-    // Nếu AI suggest lấy branch info
-    if (suggestedTables.includes("branches")) {
-      try {
-        const { data } = await supabase
-          .from("branches")
-          .select(
-            "branchid, name, address, phone, opentime, closetime, lat, lng",
-          )
-          .eq("isactive", true);
-
-        if (data && data.length > 0) {
-          fetchedData.branches = data;
-        }
-      } catch (err) {
-        console.warn("⚠️ Lỗi lấy branches:", err.message);
-      }
-    }
-
-    // ✅ STEP 3: Format dữ liệu thành readable context cho AI
-    if (
-      Object.keys(fetchedData).length === 0 &&
-      !customerid &&
-      suggestedTables.includes("orders")
-    ) {
-      contextData +=
-        "\n[📋 LƯỚI Ý]: Khách chưa đăng nhập nên không thể xem lịch sử đơn hàng.";
     } else {
-      if (fetchedData.customer) {
-        contextData += `
-[👤 THÔNG TIN KHÁCH HÀNG]
-Tên: ${fetchedData.customer.fullname}
-Email: ${fetchedData.customer.email}
-Điện thoại: ${fetchedData.customer.phone}
-Hạng thẻ: ${fetchedData.customer.membership}
-Điểm hiện có: ${fetchedData.customer.totalpoints}
-Điểm tích luỹ tổng: ${fetchedData.customer.accumulated_points}
-Sinh nhật: ${fetchedData.customer.birthday || "Chưa cập nhật"}`;
-      }
-
-      if (fetchedData.orders && fetchedData.orders.length > 0) {
-        contextData += `\n\n[🛒 LỊCH SỬ ĐƠN HÀNG - ${fetchedData.orders.length} đơn gần đây]`;
-        fetchedData.orders.forEach((o) => {
-          contextData += `
-- Đơn #${o.orderid}
-  Ngày: ${new Date(o.orderdate).toLocaleDateString("vi-VN")}
-  Trạng thái: ${o.status}
-  Tổng tiền: ${o.finalamount?.toLocaleString()}đ
-  Địa chỉ: ${o.address_detail || "Chưa có"}`;
-        });
-      }
-
-      if (fetchedData.products && fetchedData.products.length > 0) {
-        // Nhóm theo category
-        const grouped = {};
-        fetchedData.products.forEach((p) => {
-          const cat = p.categories?.name || "Khác";
-          if (!grouped[cat]) grouped[cat] = [];
-          grouped[cat].push(p);
-        });
-
-        contextData += `\n\n[☕ MENU LAM TRÀ - ${fetchedData.products.length} sản phẩm]`;
-        Object.entries(grouped).forEach(([cat, products]) => {
-          contextData += `\n\n📌 ${cat}:`;
-          products.forEach((p) => {
-            contextData += `
-   • ${p.name} - ${p.baseprice?.toLocaleString()}đ`;
-            if (p.description)
-              contextData += `
-     Mô tả: ${p.description}`;
-          });
-        });
-      }
-
-      if (fetchedData.branches && fetchedData.branches.length > 0) {
-        contextData += `\n\n[🏪 CHI NHÁNH LAM TRÀ - ${fetchedData.branches.length} chi nhánh]`;
-        fetchedData.branches.forEach((b) => {
-          contextData += `
-- ${b.name}
-  Địa chỉ: ${b.address}
-  Điện thoại: ${b.phone}
-  Giờ mở: ${b.opentime || "8:00"} - ${b.closetime || "22:00"}`;
-        });
-      }
+      contextData += `\n\n[⚠️ HỆ THỐNG CẢNH BÁO]: Khách chưa đăng nhập và chưa cung cấp số điện thoại. TUYỆT ĐỐI KHÔNG BỊA RA ĐIỂM, HẠNG, HAY ĐƠN HÀNG.`;
     }
 
     contextData += "\n═══════════════════════════════════════\n";
     return contextData;
   } catch (err) {
-    console.error("❌ Lỗi retrieveDynamicContext:", err.message);
-    return LAMTRA_KNOWLEDGE;
+    console.error("❌ LỖI NGHIÊM TRỌNG TRONG RAG:", err);
+    return contextData;
   }
 }
 
