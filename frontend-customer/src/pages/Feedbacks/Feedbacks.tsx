@@ -22,7 +22,7 @@ const FeedbackCard = ({ fb }: { fb: any }) => {
     <div className="fb-note-card">
       <div className="fb-quote-icon"><FiMessageCircle /></div>
       <p className={`fb-content ${expanded ? 'expanded' : ''}`} ref={contentRef}>"{fb.content}"</p>
-      
+
       {isOverflowing && !expanded && (
         <button onClick={() => setExpanded(true)} className="fb-read-more">Xem thêm</button>
       )}
@@ -51,7 +51,7 @@ const Feedbacks: React.FC = () => {
         .select('*')
         .eq('is_visible', true)
         .order('createdat', { ascending: false });
-      
+
       if (error) throw error;
       setFeedbacks(data || []);
     } catch (e: any) {
@@ -68,13 +68,13 @@ const Feedbacks: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.displayname.trim() || !formData.content.trim()) return;
-    
+
     setSubmitting(true);
     try {
       let customerid = null;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-         customerid = session.user.id;
+        customerid = session.user.id;
       }
 
       const { error } = await supabase.from('feedbacks').insert({
@@ -85,7 +85,7 @@ const Feedbacks: React.FC = () => {
       });
 
       if (error) throw error;
-      
+
       toast.success('Gửi yêu thương thành công! Cảm ơn bạn rất nhiều 💌');
       setFormData({ displayname: '', content: '' });
       fetchFeedbacks(); // Auto reload immediately
@@ -105,24 +105,24 @@ const Feedbacks: React.FC = () => {
           <div className="fb-form-card">
             <h1 className="fb-title">Góc Nhỏ Tâm Tình <FiHeart style={{ color: '#d81b60', fill: '#d81b60', display: 'inline-block', verticalAlign: 'middle', marginLeft: '8px' }} /></h1>
             <p className="fb-desc">Nơi Lam Trà lắng nghe những yêu thương và góp ý từ bạn để ngày một hoàn thiện hơn...</p>
-            
+
             <form onSubmit={handleSubmit} className="fb-form">
               <div className="fb-input-group">
                 <label>Chúng tôi nên gọi bạn là gì? *</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   maxLength={50}
-                  placeholder="VD: Lam Trà Lover" 
+                  placeholder="VD: Lam Trà Lover"
                   value={formData.displayname}
                   onChange={e => setFormData({ ...formData, displayname: e.target.value })}
                 />
               </div>
               <div className="fb-input-group">
                 <label>Những lời bạn muốn nói... *</label>
-                <textarea 
-                  required 
-                  rows={5} 
+                <textarea
+                  required
+                  rows={5}
                   placeholder="Hôm nay đồ uống thế nào? Bạn có góp ý gì không?"
                   value={formData.content}
                   onChange={e => setFormData({ ...formData, content: e.target.value })}
@@ -139,14 +139,14 @@ const Feedbacks: React.FC = () => {
         <section className="feedbacks-list-section">
           {loading ? (
             <div className="fb-loader">
-               <div className="spinner" style={{ borderColor: '#ffeff3', borderTopColor: '#ff8fa3', margin: '0 auto 10px auto' }}></div>
-               Đang tải góc nhỏ tâm tình...
+              <div className="spinner" style={{ borderColor: '#ffeff3', borderTopColor: '#ff8fa3', margin: '0 auto 10px auto' }}></div>
+              Đang tải góc nhỏ tâm tình...
             </div>
           ) : feedbacks.length === 0 ? (
             <div className="fb-empty">Chưa có lời tâm tình nào. Hãy là người đầu tiên bóc tem nhé!</div>
           ) : (
             <div className="fb-masonry">
-              {feedbacks.map(fb => (
+              {feedbacks?.map(fb => (
                 <FeedbackCard key={fb.id} fb={fb} />
               ))}
             </div>

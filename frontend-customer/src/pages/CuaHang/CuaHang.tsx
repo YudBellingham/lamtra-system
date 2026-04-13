@@ -126,7 +126,7 @@ const CuaHang: React.FC = () => {
               </div>
 
               <div className="accordion-container">
-                {storeData.map((data) => (
+                {storeData?.map((data) => (
                   <div key={data.city} className="city-accordion">
                     <div
                       className={`city-accordion-header ${openCities[data.city] ? "open" : ""}`}
@@ -138,7 +138,7 @@ const CuaHang: React.FC = () => {
 
                     <div className={`city-accordion-content ${openCities[data.city] ? "open" : ""}`}>
                       <div className="store-items-container">
-                        {data.stores.map((store) => (
+                        {data.stores?.map((store) => (
                           <div
                             key={store.branchid}
                             className={`store-item ${activeStore?.branchid === store.branchid ? "active" : ""}`}

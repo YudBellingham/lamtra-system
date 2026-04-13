@@ -491,7 +491,7 @@ const Profile = () => {
       <p className="tab-desc">Sử dụng điểm tích luỹ <b>{customer?.totalpoints}</b> của bạn để đổi các Voucher giá trị.</p>
 
       <div className="voucher-grid" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: '15px', paddingBottom: '10px' }}>
-        {vouchers.map(v => {
+        {vouchers?.map(v => {
           const isNotEnough = customer?.totalpoints < v.pointsrequired;
           return (
             <div className={`voucher-item`} style={{ flex: '0 0 calc(50% - 10px)', scrollSnapAlign: 'start', filter: isNotEnough ? 'grayscale(100%) opacity(0.6)' : 'none' }} key={v.voucherid}>
@@ -513,7 +513,7 @@ const Profile = () => {
 
       <h2 className="tab-head mt-4">Voucher của bạn</h2>
       <div className="voucher-grid" style={{ marginBottom: '30px', display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: '15px', paddingBottom: '10px' }}>
-        {myVouchers.map(mv => {
+        {myVouchers?.map(mv => {
           const v = mv.vouchers;
           if (!v) return null;
           return (
@@ -555,7 +555,7 @@ const Profile = () => {
         </div>
       </div>
       <div className="history-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px', border: '1px solid #f9f9f9', borderRadius: '10px' }}>
-        {pointHistory.filter(h => {
+        {pointHistory?.filter(h => {
           let matchType = true;
           if (historyFilter === 'in') matchType = h.pointchange > 0;
           if (historyFilter === 'out') matchType = h.pointchange < 0;
@@ -566,7 +566,7 @@ const Profile = () => {
           }
 
           return matchType && matchDate;
-        }).map(h => (
+        })?.map(h => (
           <div className="history-item" key={h.pointhistoryid}>
             <div className="h-left">
               <div className="h-type">{h.type}</div>
@@ -587,7 +587,7 @@ const Profile = () => {
     <div className="tab-pane fade-in">
       <h2 className="tab-head">Lịch sử đơn hàng</h2>
       <div className="order-list">
-        {orders.map(o => {
+        {orders?.map(o => {
           const statusClass = `status-${o.status?.split(' ')[0]?.toLowerCase()}`;
           return (
             <div
@@ -694,7 +694,7 @@ const Profile = () => {
 
       <h3 style={{ fontSize: '18px', color: '#d81b60', marginBottom: '15px' }}>Món yêu thích ({favorites.products.length})</h3>
       <div className="voucher-grid" style={{ marginBottom: '30px' }}>
-        {favorites.products.map(fav => (
+        {favorites.products?.map(fav => (
           <div key={fav.id} className="voucher-item" style={{ border: '1px solid #ffeff3' }}>
             <div className="v-title" style={{ color: '#333' }}>{fav.products.name}</div>
             <div className="v-points" style={{ fontSize: '12px' }}>{fav.products.subtitle}</div>
@@ -706,7 +706,7 @@ const Profile = () => {
 
       <h3 style={{ fontSize: '18px', color: '#d81b60', marginBottom: '15px' }}>Đơn hàng mẫu ({favorites.templates.length})</h3>
       <div className="order-list">
-        {favorites.templates.map(tmp => (
+        {favorites.templates?.map(tmp => (
           <div key={tmp.templateid} className="order-item" style={{ borderLeft: '5px solid #ffcc00' }}>
             <div className="o-header">
               <span className="o-id">{tmp.templatename}</span>

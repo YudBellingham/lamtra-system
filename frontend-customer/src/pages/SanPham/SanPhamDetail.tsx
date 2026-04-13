@@ -143,7 +143,7 @@ const SanPhamDetail: React.FC = () => {
   const handleToppingToggle = (topping: { name: string, price: number }) => {
     setSelectedToppings(prev =>
       prev.some(t => t.name === topping.name)
-        ? prev.filter(t => t.name !== topping.name)
+        ? prev?.filter(t => t.name !== topping.name)
         : [...prev, topping]
     );
   };
@@ -152,7 +152,7 @@ const SanPhamDetail: React.FC = () => {
     if (!product) return;
 
     addToCart({
-      id: `${product.productid}-${selectedSize}-${selectedSugar}-${selectedIce}-${selectedToppings.map(t => t.name).join('-')}-${Date.now()}`,
+      id: `${product.productid}-${selectedSize}-${selectedSugar}-${selectedIce}-${selectedToppings?.map(t => t.name).join('-')}-${Date.now()}`,
       productid: product.productid,
       name: product.name,
       imageurl: product.imageurl,
@@ -268,7 +268,7 @@ const SanPhamDetail: React.FC = () => {
                 </div>
 
                 <div className="related-grid">
-                  {relatedProducts.map(relProd => (
+                  {relatedProducts?.map(relProd => (
                     <div
                       key={relProd.productid}
                       className="rel-product-card"
@@ -317,7 +317,7 @@ const SanPhamDetail: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <div style={{ display: 'flex', gap: '5px', color: '#ffc107', fontSize: '20px' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
+                    {[1, 2, 3, 4, 5]?.map(star => (
                       <FaStar key={star} color={star <= Math.round(Number(averageRating)) ? "#ffc107" : "#e4e5e9"} />
                     ))}
                   </div>
@@ -331,7 +331,7 @@ const SanPhamDetail: React.FC = () => {
                     Chưa có đánh giá nào cho sản phẩm này, hãy là người đầu tiên trải nghiệm!
                   </p>
                 ) : (
-                  reviews.map(rev => (
+                  reviews?.map(rev => (
                     <div key={rev.reviewid} className="review-card" style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', border: '1px solid #ffeff3', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', gap: '15px' }}>
                       <div className="review-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', background: '#d81b60', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', flexShrink: 0 }}>
                         {getInitials(rev.customers?.fullname)}
@@ -342,7 +342,7 @@ const SanPhamDetail: React.FC = () => {
                           <span style={{ fontSize: '12px', color: '#bbb' }}>{new Date(rev.createdat).toLocaleDateString('vi-VN')}</span>
                         </div>
                         <div className="star-rating" style={{ display: 'flex', gap: '4px', marginBottom: '10px', fontSize: '12px' }}>
-                          {[1, 2, 3, 4, 5].map(star => (
+                          {[1, 2, 3, 4, 5]?.map(star => (
                             <FaStar key={star} color={star <= rev.rating ? "#ffc107" : "#e4e5e9"} />
                           ))}
                         </div>
@@ -386,7 +386,7 @@ const SanPhamDetail: React.FC = () => {
                     <div className="option-section">
                       <h4 className="option-title">Lượng Đường</h4>
                       <div className="option-flex">
-                        {['0%', '50%', '100%'].map(sugar => (
+                        {['0%', '50%', '100%']?.map(sugar => (
                           <button key={sugar} className={`pill-btn ${selectedSugar === sugar ? 'active' : ''}`} onClick={() => setSelectedSugar(sugar as any)}>
                             {sugar}
                           </button>
@@ -397,7 +397,7 @@ const SanPhamDetail: React.FC = () => {
                     <div className="option-section">
                       <h4 className="option-title">Lượng Đá</h4>
                       <div className="option-flex">
-                        {['0%', '50%', '100%'].map(ice => (
+                        {['0%', '50%', '100%']?.map(ice => (
                           <button key={ice} className={`pill-btn ${selectedIce === ice ? 'active' : ''}`} onClick={() => setSelectedIce(ice as any)}>
                             {ice}
                           </button>
@@ -408,7 +408,7 @@ const SanPhamDetail: React.FC = () => {
                     <div className="option-section">
                       <h4 className="option-title">Thêm Topping <span>(Tùy chọn)</span></h4>
                       <div className="topping-list">
-                        {toppingsList.map(topping => {
+                        {toppingsList?.map(topping => {
                           const isSelected = selectedToppings.some(t => t.name === topping.name);
                           return (
                             <label key={topping.toppingid} className={`topping-checkbox ${isSelected ? 'active' : ''}`}>

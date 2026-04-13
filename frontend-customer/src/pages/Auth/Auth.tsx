@@ -59,7 +59,7 @@ const Auth = () => {
             if (!oError && newCust) {
               const { data: welcomeVouchers } = await supabase.from('vouchers').select('*').eq('iswelcome', true);
               if (welcomeVouchers && welcomeVouchers.length > 0) {
-                const insertVouchers = welcomeVouchers.map(v => ({
+                const insertVouchers = welcomeVouchers?.map(v => ({
                   customerid: newCust.customerid,
                   voucherid: v.voucherid,
                   status: 'Chưa dùng',
@@ -194,7 +194,7 @@ const Auth = () => {
       if (!dbError && insertedCustomer) {
         const { data: welcomeVouchers } = await supabase.from('vouchers').select('*').eq('iswelcome', true);
         if (welcomeVouchers && welcomeVouchers.length > 0) {
-          const insertVouchers = welcomeVouchers.map(v => ({
+          const insertVouchers = welcomeVouchers?.map(v => ({
             customerid: insertedCustomer.customerid,
             voucherid: v.voucherid,
             status: 'Chưa dùng',

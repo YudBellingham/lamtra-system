@@ -73,7 +73,7 @@ const HomePage: React.FC = () => {
     },
     {
       id: 2,
-      main: imgCoc6, 
+      main: imgCoc6,
       sub: imgCoc4,
       alt: "Trà trái cây tươi",
     },
@@ -250,7 +250,7 @@ const HomePage: React.FC = () => {
           className={`ingredients-grid ${ingrVisible ? "start-anim" : ""}`}
           ref={ingredientsRef}
         >
-          {ingredientsData.map((item, index) => (
+          {ingredientsData?.map((item, index) => (
             <div
               key={item.id}
               style={{ animationDelay: `${index * 0.15}s` }}
@@ -299,7 +299,7 @@ const HomePage: React.FC = () => {
                   <img src={sliderData[currentSlide].sub} alt="Sub detail" />
                 </div>
               </div>
-              
+
               <div className="decor-circle-bg"></div>
               <button className="nav-btn next-btn" onClick={nextSlide}>
                 <FaChevronRight />
@@ -307,9 +307,9 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="slider-dots">
-              {sliderData.map((_, idx) => (
-                <span 
-                  key={idx} 
+              {sliderData?.map((_, idx) => (
+                <span
+                  key={idx}
                   className={`dot-indicator ${idx === currentSlide ? 'active' : ''}`}
                   onClick={() => setCurrentSlide(idx)}
                 ></span>
@@ -320,7 +320,7 @@ const HomePage: React.FC = () => {
           <div className="feature-info">
             <h3 className="feature-subtitle">Tươi Mới & Nguyên Bản</h3>
             <p className="feature-text">
-              Tại Lam Trà, chúng mình tin rằng một ly trà ngon được tạo nên từ rất nhiều 
+              Tại Lam Trà, chúng mình tin rằng một ly trà ngon được tạo nên từ rất nhiều
               yếu tố. Nó ngon bởi sự tươi mới mỗi ngày
               của trái cây, vị đậm đà của cốt trà ủ lạnh và niềm vui khi bạn cầm
               nó trên tay đi khắp mọi nẻo đường.
@@ -377,8 +377,8 @@ const HomePage: React.FC = () => {
             </h2>
           </div>
           <div className="news-grid" style={{ padding: '0 5%', maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
-            {latestNews.map(news => (
-              <div key={news.newsid} className="news-card" onClick={() => window.location.href=`/tin-tuc/${news.newsid}`} style={{ background: '#fff', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.3s' }}>
+            {latestNews?.map(news => (
+              <div key={news.newsid} className="news-card" onClick={() => window.location.href = `/tin-tuc/${news.newsid}`} style={{ background: '#fff', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.3s' }}>
                 <div className="news-image-wrapper" style={{ position: 'relative', height: '200px' }}>
                   <img src={news.thumbnail} alt={news.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <span className="news-type-badge story" style={{ position: 'absolute', top: '10px', left: '10px', background: '#d81b60', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>{news.type}</span>

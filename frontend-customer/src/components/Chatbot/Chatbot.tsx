@@ -26,16 +26,16 @@ const Chatbot: React.FC = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-    
+
     const userMessage: Message = { role: 'user', text: input };
     const maxHistoryLength = 6;
-    
+
     // Format history for Groq API
-    const contextMessages = [...messages, userMessage].slice(-maxHistoryLength).map(m => ({
-       role: m.role,
-       content: m.text
+    const contextMessages = [...messages, userMessage].slice(-maxHistoryLength)?.map(m => ({
+      role: m.role,
+      content: m.text
     }));
-    
+
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -71,9 +71,9 @@ const Chatbot: React.FC = () => {
             </div>
             <button className="close-btn" onClick={() => setIsOpen(false)}><FiX size={20} /></button>
           </div>
-          
+
           <div className="chatbot-messages">
-            {messages.map((msg, idx) => (
+            {messages?.map((msg, idx) => (
               <div key={idx} className={`chat-message ${msg.role === 'assistant' ? 'model' : 'user'}`}>
                 <div className="chat-bubble-text">{msg.text}</div>
               </div>
@@ -89,9 +89,9 @@ const Chatbot: React.FC = () => {
           </div>
 
           <div className="chatbot-input">
-            <input 
-              type="text" 
-              placeholder="Nhập tin nhắn..." 
+            <input
+              type="text"
+              placeholder="Nhập tin nhắn..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={handleKeyPress}

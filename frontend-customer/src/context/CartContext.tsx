@@ -69,8 +69,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCart(prev => {
       const existingItem = prev.find(item => item.id === newItem.id);
       if (existingItem) {
-        return prev.map(item => 
-          item.id === newItem.id 
+        return prev?.map(item =>
+          item.id === newItem.id
             ? { ...item, quantity: item.quantity + newItem.quantity }
             : item
         );
@@ -80,11 +80,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setCart(prev => prev?.filter(item => item.id !== id));
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart(prev => prev.map(item => {
+    setCart(prev => prev?.map(item => {
       if (item.id === id) {
         const newQuantity = item.quantity + delta;
         return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;

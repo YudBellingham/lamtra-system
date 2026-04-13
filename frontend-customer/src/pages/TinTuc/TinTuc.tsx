@@ -57,7 +57,7 @@ const TinTuc: React.FC = () => {
 
   const filteredNews = activeFilter === "Tất cả"
     ? newsData
-    : newsData.filter(item => item.type?.trim() === activeFilter);
+    : newsData?.filter(item => item.type?.trim() === activeFilter);
 
   const featuredNews = filteredNews.length > 0 ? filteredNews[0] : null;
   const remainingNews = featuredNews ? filteredNews.slice(1) : [];
@@ -122,7 +122,7 @@ const TinTuc: React.FC = () => {
         {!loading && !error && (
           <>
             <div className="news-filter-container" ref={gridRef}>
-              {filters.map(filter => (
+              {filters?.map(filter => (
                 <button
                   key={filter}
                   className={`news-filter-btn ${activeFilter === filter ? "active" : ""}`}
@@ -134,7 +134,7 @@ const TinTuc: React.FC = () => {
             </div>
 
             <div className="news-grid">
-              {gridNews.map(news => (
+              {gridNews?.map(news => (
                 <div
                   key={news.newsid}
                   className="news-card"
@@ -164,7 +164,7 @@ const TinTuc: React.FC = () => {
 
             {totalPages > 1 && (
               <div className="pagination">
-                {Array.from({ length: totalPages }).map((_, idx) => (
+                {Array.from({ length: totalPages })?.map((_, idx) => (
                   <button
                     key={idx}
                     className={`page-btn ${currentPage === idx + 1 ? 'active' : ''}`}
