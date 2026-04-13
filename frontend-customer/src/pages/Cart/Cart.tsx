@@ -513,7 +513,15 @@ const Cart: React.FC = () => {
 
               <div className="checkout-group">
                 <label>Số điện thoại *</label>
-                <input type="tel" placeholder="VD: 0912345678" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                <input 
+                  type="tel" 
+                  placeholder="VD: 0912345678" 
+                  value={formData.phone} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, ''); // Chỉ cho phép số
+                    if (val.length <= 10) setFormData({ ...formData, phone: val });
+                  }} 
+                />
               </div>
 
               {orderType === 'Giao hàng' && (
