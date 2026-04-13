@@ -172,78 +172,160 @@ const TABLE_DESCRIPTORS = {
   },
 };
 
-// ==================== DYNAMIC CONTEXT RETRIEVAL (SIMPLE & STABLE) ====================
+// ==================== DYNAMIC CONTEXT RETRIEVAL (DEFENSIVE PROGRAMMING) ====================
+// Nguyên tắc: Tách try-catch để chống lỗi domino
 async function retrieveDynamicContext(prompt, customerid = null) {
   let contextData = "\n═══════════════════════════════════════";
   contextData += "\n[📊 KIẾN THỨC NỀN TẢNG LAM TRÀ]";
   contextData += `\n${LAMTRA_KNOWLEDGE}\n`;
 
+  // ============ PHẦN 1: LẤY MENU (TÁCH RỜI) ============
   try {
-    // 1. LUÔN LUÔN LẤY MENU (Bỏ join bảng categories để tránh lỗi sập ngầm)
+    console.log("📌 Bước 1: Lấy Menu từ database...");
+    // ✅ FIX 1: Dùng cột `status` thay vì `isactive` (theo schema)
     const { data: products, error: prodErr } = await supabase
       .from("products")
-      .select("name, baseprice, description")
-      .eq("isactive", true);
+      .select("name, baseprice, description, status");
 
-    if (prodErr) console.error("❌ LỖI LẤY MENU:", prodErr.message);
-    if (products && products.length > 0) {
-      contextData += `\n[☕ MENU LAM TRÀ (LUÔN CÓ SẴN)]`;
-      products.forEach((p) => {
-        contextData += `\n- ${p.name}: ${p.baseprice}đ (Mô tả: ${p.description || "Không có"})`;
-      });
+    if (prodErr) {
+      console.error("❌ LỖI LẤY MENU:", prodErr.message);
+    } else if (products && products.length > 0) {
+      // Lọc những sản phẩm có status hợp lệ (có sẵn)
+      const activeProducts = products.filter(
+        (p) => p.status && p.status !== "unavailable",
+      );
+      if (activeProducts.length > 0) {
+        contextData += `\n[☕ MENU LAM TRÀ (LUÔN CÓ SẴN)]`;
+        activeProducts.forEach((p) => {
+          contextData += `\n- ${p.name}: ${p.baseprice}đ (Trạng thái: ${p.status || "Không xác định"})`;
+        });
+      }
     }
+  } catch (err) {
+    console.warn("⚠️ Lỗi trong phần lấy Menu:", err.message);
+    // ❌ KHÔNG return! Tiếp tục sang phần khách hàng
+  }
 
-    // 2. KIỂM TRA KHÁCH HÀNG
+  // ============ PHẦN 2: LẤY THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG (TÁCH RỜI) ============
+  try {
+    console.log("📌 Bước 2: Lấy thông tin Khách hàng...");
+
     let foundCustomer = null;
-    let phoneInPrompt = prompt.match(/\b([0-9]{10})\b/);
 
+    // ✅ FIX 2: Kiểm tra kiểu dữ liệu của customerid
+    // - Nếu là UUID (chứa dấu gạch ngang "-"): query bằng authid
+    // - Nếu là số nguyên: query bằng customerid
     if (customerid) {
-      const { data } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("customerid", customerid)
-        .single();
-      if (data) foundCustomer = data;
-    } else if (phoneInPrompt) {
-      const { data } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("phone", phoneInPrompt[0])
-        .single();
-      if (data) foundCustomer = data;
+      const isUUID = typeof customerid === "string" && customerid.includes("-");
+
+      if (isUUID) {
+        // UUID → query theo authid
+        console.log(`🔍 Tìm khách hàng bằng authid (UUID): ${customerid}`);
+        const { data, error: err1 } = await supabase
+          .from("customers")
+          .select(
+            "customerid, fullname, phone, email, membership, totalpoints, accumulated_points",
+          )
+          .eq("authid", customerid)
+          .single();
+        if (err1) {
+          console.warn("⚠️ Không tìm thấy khách bằng authid:", err1.message);
+        } else if (data) {
+          foundCustomer = data;
+          console.log(`✅ Tìm thấy khách: ${data.fullname}`);
+        }
+      } else {
+        // Số nguyên → query theo customerid
+        console.log(`🔍 Tìm khách hàng bằng customerid (số): ${customerid}`);
+        const { data, error: err2 } = await supabase
+          .from("customers")
+          .select(
+            "customerid, fullname, phone, email, membership, totalpoints, accumulated_points",
+          )
+          .eq("customerid", parseInt(customerid))
+          .single();
+        if (err2) {
+          console.warn(
+            "⚠️ Không tìm thấy khách bằng customerid:",
+            err2.message,
+          );
+        } else if (data) {
+          foundCustomer = data;
+          console.log(`✅ Tìm thấy khách: ${data.fullname}`);
+        }
+      }
+    } else {
+      // Thử tìm bằng số điện thoại từ prompt
+      const phoneInPrompt = prompt.match(/\b([0-9]{10})\b/);
+      if (phoneInPrompt) {
+        console.log(
+          `📞 Tìm khách hàng bằng số điện thoại: ${phoneInPrompt[0]}`,
+        );
+        const { data, error: err3 } = await supabase
+          .from("customers")
+          .select(
+            "customerid, fullname, phone, email, membership, totalpoints, accumulated_points",
+          )
+          .eq("phone", phoneInPrompt[0])
+          .single();
+        if (err3) {
+          console.warn(
+            "⚠️ Không tìm thấy khách bằng điện thoại:",
+            err3.message,
+          );
+        } else if (data) {
+          foundCustomer = data;
+          console.log(`✅ Tìm thấy khách: ${data.fullname}`);
+        }
+      }
     }
 
-    // 3. XỬ LÝ THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG
+    // Xử lý dữ liệu khách hàng nếu tìm thấy
     if (foundCustomer) {
       contextData += `\n\n[👤 THÔNG TIN KHÁCH HÀNG ĐANG CHAT]
 Tên: ${foundCustomer.fullname}
 Điện thoại: ${foundCustomer.phone}
+Email: ${foundCustomer.email || "Không có"}
 Hạng thẻ: ${foundCustomer.membership || "Chưa có"}
-Điểm hiện có: ${foundCustomer.totalpoints || 0}`;
+Điểm hiện có: ${foundCustomer.totalpoints || 0}
+Điểm tích lũy: ${foundCustomer.accumulated_points || 0}`;
 
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("orderid, status, finalamount, orderdate")
-        .eq("customerid", foundCustomer.customerid)
-        .order("orderdate", { ascending: false })
-        .limit(5);
+      // Lấy 5 đơn hàng gần nhất của khách
+      try {
+        const { data: orders, error: ordErr } = await supabase
+          .from("orders")
+          .select("orderid, status, finalamount, orderdate")
+          .eq("customerid", foundCustomer.customerid)
+          .order("orderdate", { ascending: false })
+          .limit(5);
 
-      if (orders && orders.length > 0) {
-        contextData += `\n\n[🛒 5 ĐƠN HÀNG GẦN NHẤT CỦA KHÁCH NÀY]`;
-        orders.forEach((o) => {
-          contextData += `\n- Đơn #${o.orderid} (${new Date(o.orderdate).toLocaleDateString()}): ${o.status}, Tổng: ${o.finalamount}đ`;
-        });
+        if (ordErr) {
+          console.warn("⚠️ Lỗi lấy đơn hàng:", ordErr.message);
+        } else if (orders && orders.length > 0) {
+          contextData += `\n\n[🛒 5 ĐƠN HÀNG GẦN NHẤT]`;
+          orders.forEach((o) => {
+            const dateStr = new Date(o.orderdate).toLocaleDateString("vi-VN");
+            contextData += `\n- Đơn #${o.orderid} (${dateStr}): ${o.status}, Tổng: ${o.finalamount?.toLocaleString() || 0}đ`;
+          });
+        }
+      } catch (ordErr) {
+        console.warn("⚠️ Lỗi trong khối lấy đơn hàng:", ordErr.message);
+        // Không return - vẫn để luồng tiếp tục
       }
     } else {
-      contextData += `\n\n[⚠️ HỆ THỐNG CẢNH BÁO]: Khách chưa đăng nhập và chưa cung cấp số điện thoại. TUYỆT ĐỐI KHÔNG BỊA RA ĐIỂM, HẠNG, HAY ĐƠN HÀNG.`;
+      contextData += `\n\n[⚠️ HỆ THỐNG CẢNH BÁO]
+Khách chưa đăng nhập và chưa cung cấp số điện thoại hợp lệ.
+TUYỆT ĐỐI KHÔNG BỊA RA: Điểm, Hạng thẻ, hoặc thông tin Đơn hàng của khách!
+Hãy yêu cầu khách: "Bạn vui lòng đăng nhập hoặc cung cấp số điện thoại 10 chữ số nhé! 📱"`;
     }
-
-    contextData += "\n═══════════════════════════════════════\n";
-    return contextData;
   } catch (err) {
-    console.error("❌ LỖI NGHIÊM TRỌNG TRONG RAG:", err);
-    return contextData;
+    console.error("❌ Lỗi NGHIÊM TRỌNG trong phần khách hàng:", err.message);
+    // Dù lỗi cũng phải return contextData (chứa ít nhất menu)
+    contextData += `\n\n[⚠️ LỖI]: Không thể tải thông tin khách hàng vào lúc này.`;
   }
+
+  contextData += "\n═══════════════════════════════════════\n";
+  return contextData;
 }
 
 // ==================== MAIN CHATBOT ENDPOINT ====================
