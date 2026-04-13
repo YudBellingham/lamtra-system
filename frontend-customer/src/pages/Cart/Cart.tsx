@@ -105,7 +105,7 @@ const Cart: React.FC = () => {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) return;
       try {
-        const res = await axios.get('${import.meta.env.VITE_API_URL}/api/customers/favorites', {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
           headers: { Authorization: `Bearer ${session.access_token}` }
         });
         setOrderTemplates(res.data.templates || []);
@@ -139,7 +139,7 @@ const Cart: React.FC = () => {
     setIsReordering(true);
     const toastId = toast.loading('Đang xử lý đơn mẫu...');
     try {
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/orders/reorder', { orderid: orderId });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/reorder`, { orderid: orderId });
       if (res.data.success) {
         const { reorderCart, hasMissingItems } = res.data;
         let addedCount = 0;
@@ -253,7 +253,7 @@ const Cart: React.FC = () => {
             exactLng: targetLng
           }
         };
-        const res = await axios.post('${import.meta.env.VITE_API_URL}/api/estimate-shipping', payload);
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/estimate-shipping`, payload);
         if (res.data.success) {
           const { branchesInfo, fallbackLevel, lat: resLat, lng: resLng } = res.data;
           setDeliveryBranchesInfo(branchesInfo);
@@ -300,7 +300,7 @@ const Cart: React.FC = () => {
     if (!bid) return;
 
     try {
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/checkout/capability', { branchId: bid, cart });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/checkout/capability`, { branchId: bid, cart });
       if (res.data.success) {
         const cap = res.data.capability;
         setPickupCapability(cap);
@@ -400,14 +400,14 @@ const Cart: React.FC = () => {
         }
       };
 
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/checkout', payload);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/checkout`, payload);
       if (res.data.success) {
         if (formData.paymentMethod === 'COD') {
           toast.success('Đặt hàng thành công!');
           clearCart();
           navigate(`/order/${orderId}`);
         } else {
-          const vnpRes = await axios.post('${import.meta.env.VITE_API_URL}/api/create_payment_url', { orderId, amount: finalAmount, orderInfo: `Thanh toan don hang ${orderId}` });
+          const vnpRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/create_payment_url`, { orderId, amount: finalAmount, orderInfo: `Thanh toan don hang ${orderId}` });
           if (vnpRes.data.url) window.location.href = vnpRes.data.url;
         }
       }

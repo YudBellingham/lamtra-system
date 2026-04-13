@@ -62,10 +62,10 @@ async function calculateIngredients(cart, supabaseClient) {
     const toppingIds = [];
 
     for (const item of cart) {
-        if (item.productid && !productIds.includes(item.productid)) productIds.push(item.productid);
+        if (item.productid && !productIds?.includes(item.productid)) productIds.push(item.productid);
         if (item.toppings && Array.isArray(item.toppings)) {
             for (const t of item.toppings) {
-                if (t.toppingid && !toppingIds.includes(t.toppingid)) toppingIds.push(t.toppingid);
+                if (t.toppingid && !toppingIds?.includes(t.toppingid)) toppingIds.push(t.toppingid);
             }
         }
     }
@@ -117,7 +117,7 @@ async function checkBranchCapability(branchId, cart, requiredIngredients, supaba
     for (const item of cart) {
         const prodStatus = bStatus?.find(s => s.productid === item.productid);
         if (!prodStatus || prodStatus.status !== 'Còn món') {
-            if (!outOfStockItems.includes(item.name)) outOfStockItems.push(item.name);
+            if (!outOfStockItems?.includes(item.name)) outOfStockItems.push(item.name);
         }
     }
 
@@ -690,10 +690,10 @@ app.post('/api/customers/update-profile', async (req, res) => {
         if (error) {
             // Bắt lỗi Unique Constraint từ PostgreSQL (23505)
             if (error.code === '23505') {
-                if (error.details.includes('phone')) {
+                if (error.details?.includes('phone')) {
                     return res.status(400).json({ error: 'Số điện thoại đã tồn tại, vui lòng nhập số điện thoại khác.' });
                 }
-                if (error.details.includes('email')) {
+                if (error.details?.includes('email')) {
                     return res.status(400).json({ error: 'Email đã tồn tại trong hệ thống.' });
                 }
             }

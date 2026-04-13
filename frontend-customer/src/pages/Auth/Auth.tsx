@@ -27,13 +27,13 @@ const Auth = () => {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    const isRecoveryHash = window.location.hash.includes('type=recovery');
+    const isRecoveryHash = window.location.hash?.includes('type=recovery');
     if (isRecoveryHash) {
       setIsRecovery(true);
     }
 
     const syncUserAndRedirect = async () => {
-      if (window.location.hash.includes('type=recovery')) return;
+      if (window.location.hash?.includes('type=recovery')) return;
       if (sessionStorage.getItem('isRegistering') === 'true') return;
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -82,10 +82,10 @@ const Auth = () => {
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || window.location.hash.includes('type=recovery')) {
+      if (event === 'PASSWORD_RECOVERY' || window.location.hash?.includes('type=recovery')) {
         setIsRecovery(true);
       } else if (event === 'SIGNED_IN') {
-        if (!window.location.hash.includes('type=recovery')) {
+        if (!window.location.hash?.includes('type=recovery')) {
           syncUserAndRedirect();
         }
       }
@@ -135,7 +135,7 @@ const Auth = () => {
 
     // Gọi API Backend để kiểm tra trùng lặp chi tiết
     try {
-      const checkRes = await axios.post('${import.meta.env.VITE_API_URL}/api/auth/check-existence', {
+      const checkRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/check-existence`, {
         email: regEmail,
         phone: phone
       });

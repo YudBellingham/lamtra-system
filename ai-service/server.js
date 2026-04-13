@@ -36,7 +36,7 @@ async function retrieveDynamicContext(prompt, customerid = null) {
 
     try {
         // 1. Quét từ khóa: Điểm tích lũy, Hạng thành viên
-        if (lowerPrompt.includes("điểm") || lowerPrompt.includes("hạng") || lowerPrompt.includes("member")) {
+        if (lowerPrompt?.includes("điểm") || lowerPrompt?.includes("hạng") || lowerPrompt?.includes("member")) {
             if (customerid) {
                 const { data } = await supabase.from('customers').select('fullname, totalpoints, membership').eq('customerid', customerid).single();
                 if (data) {
@@ -48,7 +48,7 @@ async function retrieveDynamicContext(prompt, customerid = null) {
         }
 
         // 2. Quét từ khóa: Đơn hàng, Trạng thái đơn, Lịch sử mua
-        if (lowerPrompt.includes("đơn hàng") || lowerPrompt.includes("đã đặt") || lowerPrompt.includes("lịch sử")) {
+        if (lowerPrompt?.includes("đơn hàng") || lowerPrompt?.includes("đã đặt") || lowerPrompt?.includes("lịch sử")) {
             if (customerid) {
                 const { data } = await supabase.from('orders').select('orderid, status, finalamount, orderdate').eq('customerid', customerid).order('orderdate', { ascending: false }).limit(3);
                 if (data && data.length > 0) {
@@ -62,7 +62,7 @@ async function retrieveDynamicContext(prompt, customerid = null) {
         }
 
         // 3. Quét từ khóa: Chi nhánh, Quận, Địa chỉ
-        if (lowerPrompt.includes("quận") || lowerPrompt.includes("chi nhánh") || lowerPrompt.includes("địa chỉ") || lowerPrompt.includes("cửa hàng")) {
+        if (lowerPrompt?.includes("quận") || lowerPrompt?.includes("chi nhánh") || lowerPrompt?.includes("địa chỉ") || lowerPrompt?.includes("cửa hàng")) {
             const { data } = await supabase.from('branches').select('name, address').eq('isactive', true);
             if (data) {
                 contextData += `\n[CHI NHÁNH LAM TRÀ]:\n` + data?.map(b => `- ${b.name}: ${b.address}`).join('\n') + `\n`;

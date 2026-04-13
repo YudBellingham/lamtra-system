@@ -59,7 +59,7 @@ const SanPham: React.FC = () => {
 
   const handleLabelToggle = (label: string) => {
     setFilterLabels(prev =>
-      prev.includes(label) ? prev?.filter(l => l !== label) : [...prev, label]
+      prev?.includes(label) ? prev?.filter(l => l !== label) : [...prev, label]
     );
     setCurrentPage(1);
   };
@@ -92,7 +92,7 @@ const SanPham: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/customers/favorites', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       setFavProductIds(res.data.products?.map((p: any) => p.productid));
@@ -110,7 +110,7 @@ const SanPham: React.FC = () => {
         navigate('/auth');
         return;
       }
-      const res = await axios.post('${import.meta.env.VITE_API_URL}/api/favorites/toggle',
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/favorites/toggle`,
         { productId },
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
@@ -138,11 +138,11 @@ const SanPham: React.FC = () => {
 
   if (searchQuery.trim() !== "") {
     const query = removeAccents(searchQuery);
-    result = result?.filter(p => removeAccents(p.name).includes(query));
+    result = result?.filter(p => removeAccents(p.name)?.includes(query));
   }
 
   if (filterLabels.length > 0) {
-    result = result?.filter(p => p.label && filterLabels.includes(p.label.toLowerCase()));
+    result = result?.filter(p => p.label && filterLabels?.includes(p.label.toLowerCase()));
   }
 
   result = result?.filter(p => p.baseprice >= minPrice && p.baseprice <= maxPrice);
@@ -223,14 +223,14 @@ const SanPham: React.FC = () => {
                     <label className="checkbox-label">
                       <input
                         type="checkbox"
-                        checked={filterLabels.includes("bestseller")}
+                        checked={filterLabels?.includes("bestseller")}
                         onChange={() => handleLabelToggle("bestseller")}
                       /> Sản phẩm bán chạy
                     </label>
                     <label className="checkbox-label">
                       <input
                         type="checkbox"
-                        checked={filterLabels.includes("new")}
+                        checked={filterLabels?.includes("new")}
                         onChange={() => handleLabelToggle("new")}
                       /> Sản phẩm mới
                     </label>
@@ -310,21 +310,21 @@ const SanPham: React.FC = () => {
                       <div className="product-image-fallback" />
                     )}
                     <button
-                      className={`fav-btn ${favProductIds.includes(product.productid) ? 'active' : ''}`}
+                      className={`fav-btn ${favProductIds?.includes(product.productid) ? 'active' : ''}`}
                       onClick={(e) => handleToggleFavorite(e, product.productid)}
                       style={{
                         position: 'absolute', top: '10px', right: '10px',
                         background: 'rgba(255,255,255,0.8)', border: 'none',
                         borderRadius: '50%', width: '35px', height: '35px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: favProductIds.includes(product.productid) ? '#d81b60' : '#bbb',
+                        color: favProductIds?.includes(product.productid) ? '#d81b60' : '#bbb',
                         cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 5
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      <FiHeart fill={favProductIds.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
+                      <FiHeart fill={favProductIds?.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
                     </button>
                   </div>
                   <div className="product-info">
