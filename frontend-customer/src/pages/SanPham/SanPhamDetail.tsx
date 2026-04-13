@@ -37,18 +37,18 @@ const SanPhamDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<'M' | 'L'>('M');
   const [selectedSugar, setSelectedSugar] = useState<'0%' | '50%' | '100%'>('100%');
   const [selectedIce, setSelectedIce] = useState<'0%' | '50%' | '100%'>('100%');
-  const [selectedToppings, setSelectedToppings] = useState<{name: string, price: number}[]>([]);
-  const [toppingsList, setToppingsList] = useState<{toppingid: number, name: string, price: number}[]>([]);
+  const [selectedToppings, setSelectedToppings] = useState<{ name: string, price: number }[]>([]);
+  const [toppingsList, setToppingsList] = useState<{ toppingid: number, name: string, price: number }[]>([]);
   const [note, setNote] = useState('');
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
-      
+
       setLoading(true);
       setError(null);
-      
+
       try {
         const { data: currentProduct, error: productError } = await supabase
           .from("products")
@@ -76,7 +76,7 @@ const SanPhamDetail: React.FC = () => {
           .from("toppings")
           .select("toppingid, name, price")
           .eq("isavailable", true);
-          
+
         setToppingsList(toppingsData || []);
 
         const { data: relatedData } = await supabase
@@ -89,7 +89,7 @@ const SanPhamDetail: React.FC = () => {
         setRelatedProducts(relatedData || []);
 
         try {
-          const revRes = await fetch(`http://localhost:8000/api/reviews/product/${id}`);
+          const revRes = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
           if (revRes.ok) {
             const revData = await revRes.json();
             setReviews(revData || []);
@@ -117,9 +117,9 @@ const SanPhamDetail: React.FC = () => {
     if (!name) return "Khách hàng ẩn danh";
     const parts = name.trim().split(" ");
     if (parts.length > 1) {
-       const firstWord = parts[0];
-       const lastWord = parts[parts.length - 1];
-       return `${firstWord.charAt(0)}***${lastWord}`;
+      const firstWord = parts[0];
+      const lastWord = parts[parts.length - 1];
+      return `${firstWord.charAt(0)}***${lastWord}`;
     }
     return `${name.charAt(0)}***`;
   };
@@ -129,7 +129,7 @@ const SanPhamDetail: React.FC = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  const averageRating = reviews.length > 0 
+  const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : "0.0";
 
@@ -140,8 +140,8 @@ const SanPhamDetail: React.FC = () => {
     + (selectedSize === 'L' && product?.has_size_l ? 10000 : 0)
     + selectedToppings.reduce((sum, t) => sum + t.price, 0);
 
-  const handleToppingToggle = (topping: {name: string, price: number}) => {
-    setSelectedToppings(prev => 
+  const handleToppingToggle = (topping: { name: string, price: number }) => {
+    setSelectedToppings(prev =>
       prev.some(t => t.name === topping.name)
         ? prev.filter(t => t.name !== topping.name)
         : [...prev, topping]
@@ -150,7 +150,7 @@ const SanPhamDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    
+
     addToCart({
       id: `${product.productid}-${selectedSize}-${selectedSugar}-${selectedIce}-${selectedToppings.map(t => t.name).join('-')}-${Date.now()}`,
       productid: product.productid,
@@ -165,7 +165,7 @@ const SanPhamDetail: React.FC = () => {
       itemTotal: currentItemPrice,
       note: note.trim()
     });
-    
+
     setShowModal(false);
     toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
   };
@@ -173,7 +173,7 @@ const SanPhamDetail: React.FC = () => {
   return (
     <main className="product-detail-page">
       <BackgroundDecor />
-      
+
       <section className="product-detail-section">
         <button className="back-btn" onClick={() => navigate("/san-pham")}>
           <FaChevronLeft /> Quay lại menu
@@ -200,7 +200,7 @@ const SanPhamDetail: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="detail-info-col">
                 <div className="detail-badges-row">
                   <span className="detail-category-badge">{categoryName || "Đồ uống"}</span>
@@ -211,32 +211,32 @@ const SanPhamDetail: React.FC = () => {
                   )}
                 </div>
                 <h1 className="detail-product-name">{product.name}</h1>
-                
+
                 {product.subtitle && (
                   <h3 className="detail-product-subtitle">{product.subtitle}</h3>
                 )}
-                
+
                 <div className="detail-price-tag">
                   {product.saleprice && product.saleprice < product.baseprice ? (
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'baseline' }}>
-                       <span style={{ textDecoration: 'line-through', color: '#bbb', fontSize: '0.7em', fontWeight: 'normal' }}>
-                         {product.has_size_l 
-                           ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}` 
-                           : formatPrice(product.baseprice)}
-                       </span>
-                       <span style={{ color: '#d81b60' }}>
-                         {product.has_size_l 
-                           ? `${formatPrice(product.saleprice)} - ${formatPrice(product.saleprice + 10000)}` 
-                           : formatPrice(product.saleprice)}
-                       </span>
+                      <span style={{ textDecoration: 'line-through', color: '#bbb', fontSize: '0.7em', fontWeight: 'normal' }}>
+                        {product.has_size_l
+                          ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
+                          : formatPrice(product.baseprice)}
+                      </span>
+                      <span style={{ color: '#d81b60' }}>
+                        {product.has_size_l
+                          ? `${formatPrice(product.saleprice)} - ${formatPrice(product.saleprice + 10000)}`
+                          : formatPrice(product.saleprice)}
+                      </span>
                     </div>
                   ) : (
-                    product.has_size_l 
-                      ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}` 
+                    product.has_size_l
+                      ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
                       : formatPrice(product.baseprice)
                   )}
                 </div>
-                
+
                 <div className="detail-description">
                   {product.description ? (
                     <p>{product.description}</p>
@@ -269,8 +269,8 @@ const SanPhamDetail: React.FC = () => {
 
                 <div className="related-grid">
                   {relatedProducts.map(relProd => (
-                    <div 
-                      key={relProd.productid} 
+                    <div
+                      key={relProd.productid}
                       className="rel-product-card"
                       onClick={() => navigate(`/san-pham/${relProd.productid}`)}
                     >
@@ -292,8 +292,8 @@ const SanPhamDetail: React.FC = () => {
                         <h3 className="rel-name">{relProd.name}</h3>
                         <p className="rel-desc">{relProd.subtitle || relProd.description}</p>
                         <div className="rel-price">
-                          {relProd.has_size_l 
-                            ? `${formatPrice(relProd.baseprice)} - ${formatPrice(relProd.baseprice + 10000)}` 
+                          {relProd.has_size_l
+                            ? `${formatPrice(relProd.baseprice)} - ${formatPrice(relProd.baseprice + 10000)}`
                             : formatPrice(relProd.baseprice)}
                         </div>
                       </div>
@@ -342,9 +342,9 @@ const SanPhamDetail: React.FC = () => {
                           <span style={{ fontSize: '12px', color: '#bbb' }}>{new Date(rev.createdat).toLocaleDateString('vi-VN')}</span>
                         </div>
                         <div className="star-rating" style={{ display: 'flex', gap: '4px', marginBottom: '10px', fontSize: '12px' }}>
-                           {[1, 2, 3, 4, 5].map(star => (
-                             <FaStar key={star} color={star <= rev.rating ? "#ffc107" : "#e4e5e9"} />
-                           ))}
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <FaStar key={star} color={star <= rev.rating ? "#ffc107" : "#e4e5e9"} />
+                          ))}
                         </div>
                         <p style={{ margin: 0, color: '#555', lineHeight: '1.6', fontSize: '14px' }}>{rev.comment}</p>
                       </div>
@@ -359,7 +359,7 @@ const SanPhamDetail: React.FC = () => {
               <div className="cart-modal-overlay" onClick={() => setShowModal(false)}>
                 <div className="cart-modal" onClick={e => e.stopPropagation()}>
                   <button className="close-modal-btn" onClick={() => setShowModal(false)}><FaTimes /></button>
-                  
+
                   <div className="modal-header">
                     <img src={product.imageurl || ''} alt={product.name} />
                     <div className="modal-header-info">

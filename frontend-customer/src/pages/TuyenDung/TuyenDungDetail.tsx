@@ -104,7 +104,7 @@ const TuyenDungDetail: React.FC = () => {
         return store ? `${store.address} - ${store.name}` : id.toString();
       });
 
-      const response = await fetch("http://localhost:8000/api/send-application", {
+      const response = await fetch("${import.meta.env.VITE_API_URL}/api/send-application", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
