@@ -72,11 +72,12 @@ const TuyenDungDetail: React.FC = () => {
   }, [isHanoi]);
 
   const handleStoreToggle = (branchid: number) => {
-    setSelectedStores(prev =>
-      prev?.includes(branchid)
-        ? prev?.filter(id => id !== branchid)
-        : [...prev, branchid]
-    );
+    setSelectedStores(prev => {
+      const current = prev || [];
+      return current.includes(branchid)
+        ? current.filter(id => id !== branchid)
+        : [...current, branchid];
+    });
   };
 
   const validateForm = () => {
@@ -104,7 +105,7 @@ const TuyenDungDetail: React.FC = () => {
         return store ? `${store.address} - ${store.name}` : id.toString();
       });
 
-      const response = await fetch("${import.meta.env.VITE_API_URL}/api/send-application", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/send-application`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -283,7 +284,7 @@ const TuyenDungDetail: React.FC = () => {
                               <input
                                 type="checkbox"
                                 value={store.branchid}
-                                checked={selectedStores?.includes(store.branchid)}
+                                checked={(selectedStores || [])?.includes(store.branchid)}
                                 onChange={() => handleStoreToggle(store.branchid)}
                               />
                               <span>{store.address} - {store.name}</span>
