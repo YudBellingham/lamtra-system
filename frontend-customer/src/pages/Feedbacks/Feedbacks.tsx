@@ -1,8 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { FiHeart, FiSend, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import BackgroundDecor from '../../components/PageBackground/BackgroundDecor';
 import './styles/Feedbacks.css';
+
+const FeedbackCard = ({ fb }: { fb: any }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const contentRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      if (contentRef.current.scrollHeight > contentRef.current.clientHeight) {
+        setIsOverflowing(true);
+      }
+    }
+  }, [fb.content]);
+
+  return (
+    <div className="fb-note-card">
+      <div className="fb-quote-icon"><FiMessageCircle /></div>
+      <p className={`fb-content ${expanded ? 'expanded' : ''}`} ref={contentRef}>"{fb.content}"</p>
+      
+      {isOverflowing && !expanded && (
+        <button onClick={() => setExpanded(true)} className="fb-read-more">Xem thêm</button>
+      )}
+      {expanded && (
+        <button onClick={() => setExpanded(false)} className="fb-read-more">Thu gọn</button>
+      )}
+
+      <div className="fb-meta">
+        <span className="fb-author">- {fb.displayname}</span>
+        <span className="fb-date">{new Date(fb.createdat).toLocaleDateString('vi-VN')}</span>
+      </div>
+    </div>
+  );
+};
 
 const Feedbacks: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -64,6 +98,7 @@ const Feedbacks: React.FC = () => {
 
   return (
     <main className="feedbacks-page">
+      <BackgroundDecor />
       <div className="feedbacks-container">
         {/* Left Side: Form */}
         <section className="feedbacks-form-section">
@@ -112,14 +147,7 @@ const Feedbacks: React.FC = () => {
           ) : (
             <div className="fb-masonry">
               {feedbacks.map(fb => (
-                <div key={fb.id} className="fb-note-card">
-                  <div className="fb-quote-icon"><FiMessageCircle /></div>
-                  <p className="fb-content">"{fb.content}"</p>
-                  <div className="fb-meta">
-                    <span className="fb-author">- {fb.displayname}</span>
-                    <span className="fb-date">{new Date(fb.createdat).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                </div>
+                <FeedbackCard key={fb.id} fb={fb} />
               ))}
             </div>
           )}

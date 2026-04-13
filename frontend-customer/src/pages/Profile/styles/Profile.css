@@ -654,3 +654,116 @@
     font-size: 20px;
   }
 }
+
+/* TEMPLATE MODAL */
+.template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+.template-modal {
+  background: white;
+  width: 90%;
+  max-width: 450px;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.template-modal h3 {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  color: #d81b60;
+  margin-bottom: 15px;
+}
+
+.template-modal p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.template-input-wrapper {
+  margin-bottom: 25px;
+}
+
+.template-input-wrapper label {
+  display: block;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: #888;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.template-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 15px;
+  transition: all 0.3s;
+}
+
+.template-input:focus {
+  border-color: #ff8fa3;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 143, 163, 0.2);
+}
+
+.template-modal-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-cancel-template {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-save-template {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: #d81b60;
+  color: white;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-save-template:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-save-template:not(:disabled):hover {
+  background: #ad1457;
+  transform: translateY(-2px);
+}

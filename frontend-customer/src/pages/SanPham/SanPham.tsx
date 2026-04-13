@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaFilter } from "react-icons/fa";
+import { FiHeart } from "react-icons/fi";
 import "./styles/SanPham.css";
 import BackgroundDecor from "../../components/PageBackground/BackgroundDecor";
 import { supabase } from "../../lib/supabase";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 interface Category {
   categoryid: number;
@@ -42,6 +45,7 @@ const SanPham: React.FC = () => {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(150000);
   const [currentPage, setCurrentPage] = useState(1);
+  const [favProductIds, setFavProductIds] = useState<number[]>([]);
   const ITEMS_PER_PAGE = 12;
 
   const handlePageChange = (page: number) => {
@@ -81,7 +85,48 @@ const SanPham: React.FC = () => {
     };
 
     fetchData();
+    fetchFavorites();
   }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await axios.get('http://localhost:8000/api/customers/favorites', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      setFavProductIds(res.data.products.map((p: any) => p.productid));
+    } catch (err) {
+      console.error("Lỗi fetch favorites:", err);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent, productId: number) => {
+    e.stopPropagation();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Vui lòng đăng nhập để thả tim món ăn!");
+        navigate('/auth');
+        return;
+      }
+      const res = await axios.post('http://localhost:8000/api/favorites/toggle', 
+        { productId },
+        { headers: { Authorization: `Bearer ${session.access_token}` }}
+      );
+      if (res.data.success) {
+        if (res.data.isFavorite) {
+          setFavProductIds([...favProductIds, productId]);
+          toast.success("Đã thêm vào yêu thích!");
+        } else {
+          setFavProductIds(favProductIds.filter(id => id !== productId));
+          toast("Đã bỏ yêu thích");
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi toggle favorite:", err);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -264,6 +309,23 @@ const SanPham: React.FC = () => {
                     ) : (
                       <div className="product-image-fallback" />
                     )}
+                    <button 
+                      className={`fav-btn ${favProductIds.includes(product.productid) ? 'active' : ''}`}
+                      onClick={(e) => handleToggleFavorite(e, product.productid)}
+                      style={{
+                        position: 'absolute', top: '10px', right: '10px',
+                        background: 'rgba(255,255,255,0.8)', border: 'none',
+                        borderRadius: '50%', width: '35px', height: '35px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: favProductIds.includes(product.productid) ? '#d81b60' : '#bbb',
+                        cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 5
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <FiHeart fill={favProductIds.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
+                    </button>
                   </div>
                   <div className="product-info">
                     <h3 className="product-name">{product.name}</h3>

@@ -19,7 +19,6 @@ import Profile from "./pages/Profile/Profile";
 import Cart from "./pages/Cart/Cart";
 import PaymentResult from "./pages/PaymentResult/PaymentResult";
 import OrderTracking from "./pages/OrderTracking/OrderTracking";
-import PhoneRequirementModal from "./components/PhoneRequirementModal/PhoneRequirementModal";
 import { supabase } from "./lib/supabase";
 import { useEffect, useState } from "react";
 import { CartProvider } from "./context/CartContext";
@@ -103,7 +102,6 @@ function AppContent() {
 
 function App() {
   const [customerInfo, setCustomerInfo] = useState<any>(null);
-  const [showPhoneModal, setShowPhoneModal] = useState(false);
 
   useEffect(() => {
     const checkCustomerData = async () => {
@@ -112,9 +110,6 @@ function App() {
         const { data } = await supabase.from('customers').select('*').eq('authid', session.user.id).maybeSingle();
         if (data) {
            setCustomerInfo(data);
-           if (!data.phone) {
-             setShowPhoneModal(true);
-           }
         }
       }
     };
@@ -125,7 +120,6 @@ function App() {
           checkCustomerData();
        } else if (event === 'SIGNED_OUT') {
           setCustomerInfo(null);
-          setShowPhoneModal(false);
        }
     });
 
@@ -134,14 +128,9 @@ function App() {
     }
   }, []);
 
-  const handlePhoneUpdated = () => {
-    setShowPhoneModal(false);
-  };
-
   return (
     <CartProvider>
       <Toaster position="bottom-right" toastOptions={{ style: { fontFamily: 'Quicksand, sans-serif', fontWeight: 600, color: '#d81b60', borderRadius: '12px' } }} />
-      {showPhoneModal && customerInfo && <PhoneRequirementModal customerData={customerInfo} onSuccess={handlePhoneUpdated} />}
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />

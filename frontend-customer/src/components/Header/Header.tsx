@@ -133,9 +133,11 @@ function Header() {
                   <div className="user-dropdown-info">
                     <span className="user-email">{user.fullname}</span>
                   </div>
-                  <Link to="/profile?tab=1" className="user-dropdown-item">Tài khoản của tôi</Link>
+                  <Link to="/profile?tab=1" className="user-dropdown-item">Thông tin chung</Link>
+                  <Link to="/profile?tab=2" className="user-dropdown-item">Điểm & Quà tặng</Link>
                   <Link to="/profile?tab=3" className="user-dropdown-item">Lịch sử đơn hàng</Link>
                   <Link to="/profile?tab=4" className="user-dropdown-item">Đổi mật khẩu</Link>
+                  <Link to="/profile?tab=5" className="user-dropdown-item">Mục yêu thích</Link>
                   <button onClick={handleLogout} className="logout-btn" style={{ marginTop: '4px' }}>
                     <FiLogOut /> Đăng xuất
                   </button>

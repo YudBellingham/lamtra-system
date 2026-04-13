@@ -34,19 +34,17 @@
 16. **`auditdetails` (Chi tiết kiểm kê):** `auditid` (FK), `ingredientid` (FK), `systemstock` (tồn máy), `actualstock` (tồn thực tế), `difference`, `reason`.
 
 ### Phân hệ 4: Marketing & Loyalty (CRM)
-17. **`vouchers`:** `voucherid` (int4, PK), `code`, `title`, `discountvalue`, `discounttype`, `expirydate`, `iswelcome` (bool), `pointsrequired`, `minordervalue` (int8, Default 0), `maxdiscount` (int8, Nullable), `created_at`.
-18. **`customervouchers`:** `custvoucherid` (int4, PK), `customerid` (FK), `voucherid` (FK), `status`, `reason`, `receiveddate`.
+17. **`vouchers`:** `voucherid` (int4, PK), `code`, `title`, `discountvalue`, `discounttype`, `expirydate`, `iswelcome` (bool), `pointsrequired`, `minordervalue` (int8, Default 0), `maxdiscount` (int8, Nullable), `created_at`, `scope`.
+18. **`customervouchers`:** `custvoucherid` (int4, PK), `customerid` (FK), `voucherid` (FK), `status`, `reason`, `receiveddate`, `useddate`.
 19. **`pointhistory`:** `pointhistoryid` (int4, PK), `customerid` (FK), `pointchange`, `type`, `orderid` (FK, Nullable), `description`, `createddate`.
+20. **`product_favorites` (Yêu thích món):** `id` (int8, PK), `customerid` (FK), `productid` (FK), `createdat`.
+21. **`order_templates` (Đơn mẫu/Combo):** `templateid` (int8, PK), `customerid` (FK), `orderid` (FK), `templatename`.
 
 ### Phân hệ 5: Người dùng & Truyền thông (Users & Media)
-20. **`accounts`:** `accountid` (uuid, PK), `role` (Admin/Manager/Staff), `branchid` (FK, Nullable), `employeeid` (FK).
-21. **`employees`:** `employeeid` (int8, PK), `fullname`, `email`, `phone`, `position`, `branchid` (FK), `created_at`.
-22. **`customers`:** `customerid` (int8, PK), `authid` (uuid), `fullname`, `phone`, `email`, `totalpoints`, `membership`, `birthday`.
-45. 23. `news` (Quản lý nội dung/CMS)
-46. *   `newsid` (int8, PK).
-47. *   `title` (varchar): Tiêu đề bài viết.
-48. *   `excerpt` (text): Đoạn tóm tắt nội dung bài viết.
-23. **`news` (Quản lý nội dung/CMS):**
+22. **`accounts`:** `accountid` (uuid, PK), `role` (Admin/Manager/Staff), `branchid` (FK, Nullable), `employeeid` (FK).
+23. **`employees`:** `employeeid` (int8, PK), `fullname`, `email`, `phone`, `position`, `branchid` (FK), `created_at`.
+24. **`customers`:** `customerid` (int8, PK), `authid` (uuid), `fullname`, `phone`, `email`, `totalpoints`, `membership`, `birthday`, `gender`, `accumulated_points`.
+25. **`news` (Quản lý nội dung/CMS):**
     *   `newsid` (int8, PK).
     *   `title` (varchar): Tiêu đề bài viết.
     *   `excerpt` (text): Đoạn tóm tắt nội dung bài viết.
@@ -55,11 +53,11 @@
     *   `status` (varchar): 'Hiện', 'Ẩn'.
     *   `publisheddate` (timestamptz).
     *   `thumbnail` (text): URL ảnh đại diện bài viết.
-24. **`media` (Hình ảnh/Video):** `mediaid` (int8, PK), `path` (URL), `filetype`(varchar): 'image' hoặc 'video', `newsid` (FK, Nullable), `reviewid` (FK, Nullable).
-25. **`reviews` (Đánh giá):** `reviewid` (int8, PK), `rating`, `comment`, `createdat`, `customerid` (FK), `orderid` (FK), `productid` (FK, Nullable), `sentiment` (varchar): Kết quả AI phân tích ('Tích cực', 'Tiêu cực', 'Trung lập').
-26. **`_migrations`:** Bảng hệ thống quản lý lịch sử database.
-27. **`homepage_config` (Cấu hình Landing Page):** `key` (varchar, PK), `value` (text). Dùng quản lý video, banner, v.v.
-28. **`feedbacks` (Cảm nhận khách hàng):** `id` (uuid, PK), `customerid` (uuid, FK to auth.users, Nullable), `displayname` (varchar), `content` (text), `is_visible` (bool, default true), `createdat` (timestamptz, default now()).
+26. **`media` (Hình ảnh/Video):** `mediaid` (int8, PK), `path` (URL), `filetype`(varchar): 'image' hoặc 'video', `newsid` (FK, Nullable), `reviewid` (FK, Nullable).
+27. **`reviews` (Đánh giá):** `reviewid` (int8, PK), `rating`, `comment`, `createdat`, `customerid` (FK), `orderid` (FK), `productid` (FK, Nullable), `sentiment` (varchar): Kết quả AI phân tích ('Tích cực', 'Tiêu cực', 'Trung lập').
+28. **`_migrations`:** Bảng hệ thống quản lý lịch sử database.
+29. **`homepage_config` (Cấu hình Landing Page):** `key` (varchar, PK), `value` (text). Dùng quản lý video, banner, v.v.
+30. **`feedbacks` (Cảm nhận khách hàng):** `id` (uuid, PK), `customerid` (uuid, FK to auth.users, Nullable), `displayname` (varchar), `content` (text), `is_visible` (bool, default true), `createdat` (timestamptz, default now()).
 
 ---
 
@@ -82,6 +80,10 @@
 ### D. Nhóm CRM & Loyalty
 - `customervouchers` (n-n): Nối `customers` và `vouchers`.
 - `pointhistory.customerid` → `customers.customerid` (n-1).
+- `product_favorites.customerid` → `customers.customerid` (n-1).
+- `product_favorites.productid` → `products.productid` (n-1).
+- `order_templates.customerid` → `customers.customerid` (n-1).
+- `order_templates.orderid` → `orders.orderid` (n-1).
 
 ### E. Nhóm Định danh (Auth)
 - `accounts.accountid` → `auth.users.id` (1-1).

@@ -130,10 +130,9 @@
 }
 
 .fb-masonry {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
-  align-items: start;
+  column-count: 3;
+  column-gap: 25px;
+  width: 100%;
 }
 
 /* The card style based on user request: Sticky note style */
@@ -145,6 +144,10 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border-top: 4px solid #ff8fa3;
+  break-inside: avoid;
+  margin-bottom: 25px;
+  display: inline-block;
+  width: 100%;
 }
 
 .fb-note-card:hover {
@@ -169,6 +172,28 @@
   line-height: 1.6;
   margin: 0 0 20px 0;
   font-style: italic;
+  
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fb-content.expanded {
+  -webkit-line-clamp: unset;
+}
+
+.fb-read-more {
+  background: none;
+  border: none;
+  color: #d81b60;
+  opacity: 0.8;
+  font-size: 13px;
+  padding: 0;
+  margin: -10px 0 15px 0;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: bold;
 }
 
 .fb-meta {
@@ -206,8 +231,14 @@
   }
 }
 
+@media (max-width: 900px) {
+  .fb-masonry {
+    column-count: 2;
+  }
+}
+
 @media (max-width: 600px) {
   .fb-masonry {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
 }

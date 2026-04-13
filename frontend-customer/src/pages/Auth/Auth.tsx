@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FaFacebook, FaGoogle } from 'react-icons/fa';
 import { FiChevronLeft } from 'react-icons/fi';
+import axios from 'axios';
 import './styles/Auth.css';
 
 const Auth = () => {
@@ -61,7 +62,7 @@ const Auth = () => {
                 const insertVouchers = welcomeVouchers.map(v => ({
                   customerid: newCust.customerid,
                   voucherid: v.voucherid,
-                  status: 'Chưa sử dụng',
+                  status: 'Chưa dùng',
                   reason: 'Quà tặng thành viên mới (OAuth)',
                   receiveddate: new Date().toISOString()
                 }));
@@ -118,35 +119,46 @@ const Auth = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@(?!(gmai|yaho|hotmai)\.com$)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(regEmail)) {
-      setErrorMsg('Email không hợp lệ.');
+      setErrorMsg('Email không hợp lệ. Vui lòng kiểm tra định dạng và chính tả (vd: @gmail.com).');
       setLoading(false);
       return;
     }
 
-    const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
+    const phoneRegex = /^0\d{9}$/;
     if (!phoneRegex.test(phone)) {
-      setErrorMsg('Số điện thoại không hợp lệ (Phải là 10 số và bắt đầu bằng đầu số hợp lệ).');
+      setErrorMsg('Số điện thoại không hợp lệ (phải có đủ 10 chữ số và bắt đầu bằng số 0).');
       setLoading(false);
       return;
     }
 
-    const { data: existingUsers, error: checkError } = await supabase
-      .from('customers')
-      .select('email, phone')
-      .or(`email.eq.${regEmail},phone.eq.${phone}`);
-
-    if (checkError) {
-      setErrorMsg('Lỗi kiểm tra dữ liệu: ' + checkError.message);
-      setLoading(false);
-      return;
+    // Gọi API Backend để kiểm tra trùng lặp chi tiết
+    try {
+      const checkRes = await axios.post('http://localhost:8000/api/auth/check-existence', { 
+        email: regEmail, 
+        phone: phone 
+      });
+      
+      const { emailExists, phoneExists } = checkRes.data;
+      
+      if (emailExists && phoneExists) {
+        setErrorMsg('Email và Số điện thoại đã tồn tại trong hệ thống.');
+        setLoading(false); return;
+      } else if (emailExists) {
+        setErrorMsg('Email đã tồn tại trong hệ thống.');
+        setLoading(false); return;
+      } else if (phoneExists) {
+        setErrorMsg('Số điện thoại đã tồn tại trong hệ thống.');
+        setLoading(false); return;
+      }
+    } catch (err) {
+      console.error("Lỗi check existence:", err);
     }
 
-    if (existingUsers && existingUsers.length > 0) {
-      setErrorMsg('Email hoặc Số điện thoại đã tồn tại trong hệ thống.');
-      setLoading(false);
-      return;
+    if (!birthday) {
+      setErrorMsg('Vui lòng chọn ngày sinh.');
+      setLoading(false); return;
     }
 
     sessionStorage.setItem('isRegistering', 'true');
@@ -185,7 +197,7 @@ const Auth = () => {
            const insertVouchers = welcomeVouchers.map(v => ({
              customerid: insertedCustomer.customerid,
              voucherid: v.voucherid,
-             status: 'Chưa sử dụng',
+             status: 'Chưa dùng',
              reason: 'Quà tặng đăng ký mới',
              receiveddate: new Date().toISOString()
            }));
@@ -325,8 +337,8 @@ const Auth = () => {
               
               <div className="input-group">
                 <div className="input-wrapper">
-                  <label>Ngày sinh</label>
-                  <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
+                  <label>Ngày sinh <span className="req">*</span></label>
+                  <input type="date" required value={birthday} onChange={e => setBirthday(e.target.value)} />
                 </div>
                 <div className="input-wrapper">
                   <label>Giới tính</label>
@@ -340,10 +352,17 @@ const Auth = () => {
               </div>
             </div>
 
-            {errorMsg && !isLogin && <div className="error-text">{errorMsg}</div>}
-            {successMsg && !isLogin && <div className="success-text">{successMsg}</div>}
+            {errorMsg && !isLogin && <div className="error-text" style={{ color: '#d32f2f', fontSize: '13px', marginTop: '10px', background: '#ffebee', padding: '8px', borderRadius: '5px', fontWeight: 600 }}>{errorMsg}</div>}
+            {successMsg && !isLogin && <div className="success-text" style={{ color: '#2e7d32', fontSize: '13px', marginTop: '10px', background: '#e8f5e9', padding: '8px', borderRadius: '5px', fontWeight: 600 }}>{successMsg}</div>}
 
-            <button type="submit" className="submit-btn" disabled={loading}>{loading ? 'Đang xử lý...' : 'Đăng Ký'}</button>
+            <button 
+              type="submit" 
+              className="submit-btn" 
+              disabled={loading || !regEmail || !phone || !fullname || regPassword.length < 6 || !birthday}
+              style={{ opacity: (loading || !regEmail || !phone || !fullname || regPassword.length < 6 || !birthday) ? 0.6 : 1 }}
+            >
+              {loading ? 'Đang xử lý...' : 'Đăng Ký'}
+            </button>
           </form>
         </div>
 

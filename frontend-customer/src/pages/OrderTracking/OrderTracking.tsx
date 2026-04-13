@@ -4,6 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { FiChevronLeft, FiCheck } from 'react-icons/fi';
 import { FaStar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import { useCart } from '../../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 import './styles/OrderTracking.css';
 
 const STEPS = ['Chờ xác nhận', 'Đang làm', 'Đang giao', 'Hoàn thành'];
@@ -20,6 +23,9 @@ const OrderTracking: React.FC = () => {
   const [hasReviewed, setHasReviewed] = useState(false);
   const [reviewsData, setReviewsData] = useState<any[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const { addToCart } = useCart();
+  const [reorderLoading, setReorderLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -186,6 +192,36 @@ const OrderTracking: React.FC = () => {
     }
   };
 
+  const handleReorder = async () => {
+    setReorderLoading(true);
+    try {
+        const res = await axios.post('http://localhost:8000/api/orders/reorder', { orderid: id });
+        if (res.data.success) {
+            const { reorderCart, hasMissingItems } = res.data;
+            let addedCount = 0;
+            reorderCart.forEach((item: any) => {
+                addToCart(item);
+                addedCount++;
+            });
+            
+            if (addedCount === 0) {
+                 toast.error('Các món trong đơn hàng này đã ngừng bán.');
+            } else {
+                 if (hasMissingItems) {
+                     toast.success(`Đã thêm ${addedCount} món vào giỏ. Một số món đã ngừng phục vụ nên không được thêm.`);
+                 } else {
+                     toast.success('Đã thêm các món từ đơn hàng cũ vào giỏ.');
+                 }
+                 setTimeout(() => navigate('/cart'), 1000);
+            }
+        }
+    } catch (err: any) {
+        toast.error('Lỗi khi đặt lại đơn: ' + (err.response?.data?.error || err.message));
+    } finally {
+        setReorderLoading(false);
+    }
+  };
+
   const getStepIndex = (status: string) => {
     if (status === 'Hủy') return -1;
     if (status === 'Chờ thanh toán') return -1;
@@ -285,6 +321,15 @@ const OrderTracking: React.FC = () => {
               {hasReviewed ? 'ĐÃ ĐÁNH GIÁ' : 'ĐÁNH GIÁ SẢN PHẨM'}
             </button>
           )}
+
+          <button 
+             className="btn-reorder"
+             disabled={reorderLoading}
+             onClick={handleReorder}
+             style={{ background: '#fff0f4', color: '#d81b60', border: '1px solid #ffccd5', padding: '14px 20px', borderRadius: '12px', cursor: reorderLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold', width: '100%', marginTop: '15px', fontFamily: 'Quicksand' }}
+          >
+             {reorderLoading ? 'ĐANG TẢI...' : 'ĐẶT LẠI ĐƠN NÀY'}
+          </button>
         </div>
       </div>
 
