@@ -1,67 +1,113 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FiMessageSquare, FiX, FiSend } from 'react-icons/fi';
-import './styles/Chatbot.css';
+import React, { useState, useRef, useEffect } from "react";
+import { FiMessageSquare, FiX, FiSend } from "react-icons/fi";
+import { supabase } from "../../lib/supabase";
+import "./styles/Chatbot.css";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   text: string;
 }
 
 const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState<{
+    customerid: number | null;
+    phone: string | null;
+  }>({ customerid: null, phone: null });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Lấy thông tin khách hàng đang đăng nhập
+  useEffect(() => {
+    const fetchCustomerInfo = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data } = await supabase
+            .from("customers")
+            .select("customerid, phone")
+            .eq("authid", session.user.id)
+            .maybeSingle();
+          if (data) {
+            setCustomerInfo({ customerid: data.customerid, phone: data.phone });
+          }
+        }
+      } catch (error) {
+        console.warn("⚠️ Lỗi lấy thông tin khách hàng:", error);
+      }
+    };
+    fetchCustomerInfo();
+  }, []);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([{ role: 'assistant', text: 'Chào bạn! Mình là Trợ lý ảo của Lam Trà 🧋 Bạn muốn uống gì hôm nay?' }]);
+      setMessages([
+        {
+          role: "assistant",
+          text: "Chào bạn! Mình là Trợ lý ảo của Lam Trà 🧋 Bạn muốn uống gì hôm nay?",
+        },
+      ]);
     }
   }, [isOpen]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', text: input };
+    const userMessage: Message = { role: "user", text: input };
     const maxHistoryLength = 6;
 
     // Format history for Groq API
-    const contextMessages = [...messages, userMessage].slice(-maxHistoryLength)?.map(m => ({
-      role: m.role,
-      content: m.text
-    }));
+    const contextMessages = [...messages, userMessage]
+      .slice(-maxHistoryLength)
+      ?.map((m) => ({
+        role: m.role,
+        content: m.text,
+      }));
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
 
     try {
-      const aiUrl = import.meta.env.VITE_AI_URL || 'http://localhost:5001';
+      const aiUrl = import.meta.env.VITE_AI_URL || "http://localhost:5001";
       const response = await fetch(`${aiUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: contextMessages })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: contextMessages,
+          customerid: customerInfo.customerid,
+          phone: customerInfo.phone,
+        }),
       });
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: data.reply }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Xin lỗi, hiện tại tôi đang bận pha trà, bạn đợi chút nhé!' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Xin lỗi, hiện tại tôi đang bận pha trà, bạn đợi chút nhé!",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSend();
+    if (e.key === "Enter") handleSend();
   };
 
   return (
-    <div className={`chatbot-wrapper ${isOpen ? 'open' : ''}`}>
+    <div className={`chatbot-wrapper ${isOpen ? "open" : ""}`}>
       {/* Chat Window */}
       {isOpen && (
         <div className="chatbot-window">
@@ -70,19 +116,26 @@ const Chatbot: React.FC = () => {
               <h3>Lam Trà Assistant</h3>
               <p>🟢 Trực tuyến</p>
             </div>
-            <button className="close-btn" onClick={() => setIsOpen(false)}><FiX size={20} /></button>
+            <button className="close-btn" onClick={() => setIsOpen(false)}>
+              <FiX size={20} />
+            </button>
           </div>
 
           <div className="chatbot-messages">
             {messages?.map((msg, idx) => (
-              <div key={idx} className={`chat-message ${msg.role === 'assistant' ? 'model' : 'user'}`}>
+              <div
+                key={idx}
+                className={`chat-message ${msg.role === "assistant" ? "model" : "user"}`}
+              >
                 <div className="chat-bubble-text">{msg.text}</div>
               </div>
             ))}
             {isLoading && (
               <div className="chat-message model">
                 <div className="chat-bubble-text typing">
-                  <span className="dot"></span><span className="dot"></span><span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
                 </div>
               </div>
             )}
@@ -94,7 +147,7 @@ const Chatbot: React.FC = () => {
               type="text"
               placeholder="Nhập tin nhắn..."
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               autoFocus
             />

@@ -213,12 +213,22 @@ Ví dụ: "TABLES: products, categories" hoặc "TABLES: customers"
   }
 }
 
+// ==================== UTILITY: Extract phone number from prompt ====================
+function extractPhoneNumber(text) {
+  const phoneRegex = /\b([0-9]{10})\b/; // 10 chữ số liên tiếp
+  const match = text.match(phoneRegex);
+  return match ? match[1] : null;
+}
+
 // BƯỚC 1: DYNAMIC CONTEXT RETRIEVAL (AI-Driven, No Manual If-Else)
 async function retrieveDynamicContext(prompt, customerid = null) {
   let contextData = "\n═══════════════════════════════════════";
   contextData += "\n[📊 SCHEMA AVAILABLE]";
   contextData += `\n${DATABASE_SCHEMA}`;
   contextData += `\n${LAMTRA_KNOWLEDGE}`;
+
+  // 🔑 Cờ để kiểm tra xem có tìm được customer data hay không
+  let hasCustomerData = false;
 
   try {
     // ✅ STEP 1: Dùng AI để analyze câu hỏi và xác định cần query bảng nào
@@ -229,31 +239,77 @@ async function retrieveDynamicContext(prompt, customerid = null) {
     // ✅ STEP 2: Fetch dữ liệu từ các bảng được suggest
     const fetchedData = {};
 
-    // Nếu AI suggest lấy customer info
-    if (suggestedTables.includes("customers") && customerid) {
-      try {
-        const { data } = await supabase
-          .from("customers")
-          .select(
-            "fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
-          )
-          .eq("customerid", customerid)
-          .single();
-        if (data) {
-          fetchedData.customer = data;
+    // 🔍 LƯU Ý: Tìm kiếm khách hàng bằng số điện thoại nếu không có customerid
+    let effectiveCustomerId = customerid;
+    if (suggestedTables.includes("customers")) {
+      // Thử tìm số điện thoại trong prompt
+      const phoneFromPrompt = extractPhoneNumber(prompt);
+      if (phoneFromPrompt && !customerid) {
+        console.log(
+          `📞 Phát hiện số điện thoại trong prompt: ${phoneFromPrompt}`,
+        );
+        try {
+          const { data: customerByPhone } = await supabase
+            .from("customers")
+            .select(
+              "customerid, fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
+            )
+            .eq("phone", phoneFromPrompt)
+            .single();
+          if (customerByPhone) {
+            effectiveCustomerId = customerByPhone.customerid;
+            fetchedData.customer = customerByPhone;
+            hasCustomerData = true;
+            console.log(
+              `✅ Tìm thấy khách hàng từ số điện thoại: ${customerByPhone.fullname}`,
+            );
+          }
+        } catch (err) {
+          console.warn(
+            "⚠️ Không tìm thấy khách hàng bằng số điện thoại:",
+            err.message,
+          );
         }
-      } catch (err) {
-        console.warn("⚠️ Lỗi lấy customer:", err.message);
+      }
+
+      // Nếu có customerid hoặc vừa tìm thấy từ phone
+      if (effectiveCustomerId && !fetchedData.customer) {
+        try {
+          const { data } = await supabase
+            .from("customers")
+            .select(
+              "fullname, email, phone, membership, totalpoints, accumulated_points, birthday",
+            )
+            .eq("customerid", effectiveCustomerId)
+            .single();
+          if (data) {
+            fetchedData.customer = data;
+            hasCustomerData = true;
+          }
+        } catch (err) {
+          console.warn("⚠️ Lỗi lấy customer:", err.message);
+        }
+      }
+
+      // 🚫 Nếu không tìm được customer data: thêm cảnh báo
+      if (!hasCustomerData && suggestedTables.includes("customers")) {
+        contextData += "\n\n[⚠️ HỆ THỐNG CẢNH BÁO]";
+        contextData +=
+          "\nKhách chưa đăng nhập và chưa cung cấp số điện thoại hợp lệ.";
+        contextData +=
+          "\nTUYỆT ĐỐI KHÔNG ĐƯỢC ĐOÁN SỐ ĐIỂM, SỐ ĐIỆN THOẠI hoặc HẠNG THẺ của khách.";
+        contextData +=
+          "\nHãy yêu cầu khách đăng nhập lại hoặc cung cấp số điện thoại.";
       }
     }
 
     // Nếu AI suggest lấy order info
-    if (suggestedTables.includes("orders") && customerid) {
+    if (suggestedTables.includes("orders") && effectiveCustomerId) {
       try {
         const { data } = await supabase
           .from("orders")
           .select("orderid, status, finalamount, orderdate, address_detail")
-          .eq("customerid", customerid)
+          .eq("customerid", effectiveCustomerId)
           .order("orderdate", { ascending: false })
           .limit(10);
         if (data && data.length > 0) {
@@ -264,18 +320,54 @@ async function retrieveDynamicContext(prompt, customerid = null) {
       }
     }
 
-    // Nếu AI suggest lấy product info - LẤY TOÀN BỘ MENU
+    // Nếu AI suggest lấy product info - LẤY TOÀN BỘ MENU + TÌM KIẾM CỤ THỂ
     if (suggestedTables.includes("products")) {
       try {
-        const { data } = await supabase
+        // 📌 Fetch toàn bộ menu
+        let { data } = await supabase
           .from("products")
           .select(
             "productid, name, baseprice, description, imageurl, isactive, categories(categoryid, name)",
           )
-          .eq("isactive", true); // TẠI ĐÂY: KHÔNG LIMIT, LẤY TOÀN BỘ
+          .eq("isactive", true);
 
-        if (data && data.length > 0) {
-          fetchedData.products = data;
+        // 🔍 TỐI ƯU: Tìm kiếm à việc khách đang hỏi về món ăn cụ thể nào
+        // Nếu prompt có chứa từ khóa, sắp xếp để những món khớp lên đầu
+        const displayedProducts = [];
+        const keywords = prompt
+          .toLowerCase()
+          .split(/[\s,]+/)
+          .filter((w) => w.length > 2);
+
+        if (data && data.length > 0 && keywords.length > 0) {
+          // Phân loại sản phẩm: có khớp từ khóa hay không
+          const matchedProducts = [];
+          const unmatchedProducts = [];
+
+          data.forEach((p) => {
+            const productName = p.name.toLowerCase();
+            const description = (p.description || "").toLowerCase();
+            const isMatched = keywords.some(
+              (kw) => productName.includes(kw) || description.includes(kw),
+            );
+            if (isMatched) {
+              matchedProducts.push(p);
+            } else {
+              unmatchedProducts.push(p);
+            }
+          });
+
+          // Lôi những món khớp lên đầu context
+          displayedProducts.push(...matchedProducts, ...unmatchedProducts);
+          console.log(
+            `🔍 Tìm thấy ${matchedProducts.length} sản phẩm khớp từ khóa`,
+          );
+        } else {
+          displayedProducts.push(...(data || []));
+        }
+
+        if (displayedProducts.length > 0) {
+          fetchedData.products = displayedProducts;
         }
       } catch (err) {
         console.warn("⚠️ Lỗi lấy products:", err.message);
@@ -395,6 +487,11 @@ app.post("/api/chat", async (req, res) => {
     // BƯỚC 1: Thu thập bối cảnh dữ liệu động từ Database
     const DYNAMIC_DB_CONTEXT = await retrieveDynamicContext(prompt, customerid);
 
+    // Kiểm tra xem có fetch được customer data hay không
+    const hasCustomerData = DYNAMIC_DB_CONTEXT.includes(
+      "[👤 THÔNG TIN KHÁCH HÀNG]",
+    );
+
     // BƯỚC 2: Tạo System Instruction tối ưu - ƯU TIÊN DATABASE TRƯỚC
     const systemInstruction = `
 ═════════════════════════════════════════════════════════════════
@@ -414,8 +511,17 @@ ${DYNAMIC_DB_CONTEXT}
 
 ⭐️ NGUYÊN TẮC CỨ:
    LUÔN LUÔN sử dụng dữ liệu từ database được cung cấp ở trên.
-   KHÔNG BAO GIỜ bịa ra thông tin nếu không có trong database.
-   Nếu không tìm thấy, trả lời: "Dạ, Lam Trà chưa có thông tin về [X]. Bạn có thể liên hệ hotline để được tư vấn nhé!"
+
+${
+  hasCustomerData
+    ? `   TÌNH TRẠNG HIỆN TẠI: ✅ Đã tìm thấy dữ liệu khách hàng trong context.
+   Bạn CÓ THỂ cung cấp thông tin về ĐIỂM SỐ, HẠNG THẺ, ĐƠN HÀNG của khách.`
+    : `   TÌNH TRẠNG HIỆN TẠI: ❌ Bạn KHÔNG THẤY dữ liệu khách hàng trong context.
+   TUYỆT ĐỐI KHÔNG ĐƯỢC BỊA RA ĐIỂM SỐ, HẠP THẺ hoặc SỐ ĐIỆN THOẠI.
+   Hãy yêu cầu khách: "Bạn vui lòng đăng nhập hoặc cung cấp số điện thoại 10 chữ số để tôi xem thông tin của bạn nhé!"`
+}
+
+   NẾU KHÔNG CÓ DỮ LIỆU: Hãy trả lời: "Dạ, Lam Trà chưa tìm thấy thông tin này. Bạn có thể liên hệ hotline để được tư vấn nhé!"
 
 [STEP 1️⃣]: PHÂN TÍCH CÂU HỎI
    - Khách hỏi gì? (Menu? Đơn hàng? Thông tin? Chi nhánh?)
@@ -440,7 +546,7 @@ ${DYNAMIC_DB_CONTEXT}
 2. 🚫 KHÔNG BỊA DỮ LIỆU
    ❌ Không nói "Lam Trà có Cà phê Espresso" nếu không có trong menu
    ❌ Không nói "Quán mở ở Quận Hoàn Kiếm" nếu không có chi nhánh đó
-   ❌ Không nói "Freeship từ 50k" nếu chính sách nói 100k
+   ❌ Không nói "Bạn có 250 điểm" nếu không xem được thông tin khách
    ✓ Thay vào đó: "Dạ, hiện Lam Trà chưa có Cà phê Espresso, nhưng có [các lựa chọn tương tự]..."
 
 3. 🔒 BẢO MẬT TUYỆT ĐỐI
