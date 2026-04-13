@@ -143,9 +143,9 @@ const Cart: React.FC = () => {
       if (res.data.success) {
         const { reorderCart, hasMissingItems } = res.data;
         let addedCount = 0;
-        reorderCart.forEach((item: any) => {
+        (reorderCart || []).forEach((item: any) => {
           const effectiveBasePrice = item.saleprice || item.baseprice;
-          const toppingsTotal = item.toppings.reduce((sum: number, t: any) => sum + t.price, 0);
+          const toppingsTotal = (item.toppings || []).reduce((sum: number, t: any) => sum + t.price, 0);
           const sizeUpcharge = (item.size === 'L') ? 10000 : 0;
           const itemTotal = effectiveBasePrice + sizeUpcharge + toppingsTotal;
 
@@ -754,7 +754,7 @@ const Cart: React.FC = () => {
               <p>Bạn không có mã khuyến mãi nào khả dụng.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
-                {vouchers.sort((a, b) => {
+                {(vouchers || []).sort((a, b) => {
                   const aEligible = cartTotal >= (a.minordervalue || 0);
                   const bEligible = cartTotal >= (b.minordervalue || 0);
                   if (aEligible && !bEligible) return -1;

@@ -58,9 +58,10 @@ const SanPham: React.FC = () => {
   };
 
   const handleLabelToggle = (label: string) => {
-    setFilterLabels(prev =>
-      prev?.includes(label) ? prev?.filter(l => l !== label) : [...prev, label]
-    );
+    setFilterLabels(prev => {
+      const current = prev || [];
+      return current.includes(label) ? current.filter(l => l !== label) : [...current, label];
+    });
     setCurrentPage(1);
   };
 
@@ -95,7 +96,7 @@ const SanPham: React.FC = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
-      setFavProductIds(res.data.products?.map((p: any) => p.productid));
+      setFavProductIds(res.data.products?.map((p: any) => p.productid) || []);
     } catch (err) {
       console.error("Lỗi fetch favorites:", err);
     }
@@ -133,8 +134,8 @@ const SanPham: React.FC = () => {
   };
 
   let result = selectedCategory === "all"
-    ? products
-    : products?.filter(p => p.categoryid === selectedCategory);
+    ? (products || [])
+    : (products || [])?.filter(p => p.categoryid === selectedCategory);
 
   if (searchQuery.trim() !== "") {
     const query = removeAccents(searchQuery);
@@ -142,7 +143,7 @@ const SanPham: React.FC = () => {
   }
 
   if (filterLabels.length > 0) {
-    result = result?.filter(p => p.label && filterLabels?.includes(p.label.toLowerCase()));
+    result = (result || [])?.filter(p => p.label && (filterLabels || [])?.includes(p.label.toLowerCase()));
   }
 
   result = result?.filter(p => p.baseprice >= minPrice && p.baseprice <= maxPrice);
@@ -324,7 +325,7 @@ const SanPham: React.FC = () => {
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      <FiHeart fill={favProductIds?.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
+                      <FiHeart fill={(favProductIds || [])?.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
                     </button>
                   </div>
                   <div className="product-info">

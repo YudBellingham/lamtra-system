@@ -261,7 +261,7 @@ const Profile = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
-      setFavorites(res.data);
+      setFavorites(res.data || { products: [], templates: [] });
     } catch (err) {
       console.error("Lỗi fetch favorites:", err);
     } finally {
