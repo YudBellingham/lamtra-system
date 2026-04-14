@@ -182,7 +182,11 @@ app.post("/api/chat", async (req, res) => {
     const choice = response1.choices[0];
 
     // Kiểm tra xem Groq có gọi tools không
-    if (choice.finish_reason === "tool_calls" && choice.message.tool_calls) {
+    if (
+      choice.finish_reason === "tool_calls" &&
+      choice.message.tool_calls &&
+      choice.message.tool_calls.length > 0
+    ) {
       console.log(
         `\n🔨 Groq yêu cầu gọi ${choice.message.tool_calls.length} tools`,
       );
@@ -196,28 +200,49 @@ app.post("/api/chat", async (req, res) => {
       // ========== VÒNG 3: Gửi tool results lại cho Groq ==========
       console.log("\n🧠 Vòng 3: Gửi tool results lại đến Groq...");
 
-      // Ghép lại messages bao gồm: system + user messages gốc + assistant message + tool results
-      apiMessages = [
-        { role: "system", content: SYSTEM_INSTRUCTION },
-        ...messages,
-        {
-          role: "assistant",
-          content: choice.message.content || "",
-          tool_calls: choice.message.tool_calls,
-        },
-        ...toolResults.map((tr) => ({
+      // BƯỚC QUAN TRỌNG: Ghép messages theo đúng sequence chuẩn OpenAI/Groq
+      // 1. System message
+      // 2. Original conversation messages
+      // 3. [REQUIRED] Assistant message với tool_calls - PHẢI ĐẶT TRƯỚC tool messages
+      // 4. Tool result messages (mỗi tool_call_id phải match với tool_calls ở bước 3)
+
+      const assistantMessage = {
+        role: "assistant",
+        content: choice.message.content || null, // Để null nếu không có content
+        tool_calls: choice.message.tool_calls, // QUAN TRỌNG: Phải có tool_calls
+      };
+
+      const toolMessages = toolResults.map((tr) => {
+        // Ensure content is always a string
+        const resultContent =
+          typeof tr.result === "string" ? tr.result : JSON.stringify(tr.result);
+        return {
           role: "tool",
-          tool_call_id: tr.tool_call_id,
-          content: JSON.stringify(tr.result),
-        })),
+          tool_call_id: tr.tool_call_id, // PHẢI match với tool_calls[i].id
+          content: resultContent, // PHẢI IS string
+        };
+      });
+
+      // Reconstruct messages: system + original messages + assistant message + tool results
+      const updatedMessages = [
+        { role: "system", content: SYSTEM_INSTRUCTION },
+        ...messages, // Original user/assistant messages
+        assistantMessage, // [CRITICAL] Assistant message với tool_calls MUST đứng trước tool messages
+        ...toolMessages, // Tool result messages
       ];
 
+      // Log for debugging
+      console.log(
+        `   📍 Message sequence: system → user_msgs → assistant_toolcalls → ${toolMessages.length} tool_results`,
+      );
+
       const response2 = await groq.chat.completions.create({
-        messages: apiMessages,
+        messages: updatedMessages,
         model: "llama-3.3-70b-versatile",
         temperature: 0.5,
         max_tokens: 800,
         top_p: 0.9,
+        // NOTE: Không gửi tools lần 2 - chỉ để hoàn thành response
       });
 
       const responseText =
