@@ -112,8 +112,13 @@ async function processFunctionCalls(toolCalls, customerid = null) {
   const results = [];
   for (const toolCall of toolCalls) {
     const fn = toolCall.function.name;
-    const args = toolCall.function.arguments;
-    console.log(`🔨 ${fn}/${args.type}`);
+    let args = {};
+    try {
+      args = JSON.parse(toolCall.function.arguments || "{}");
+    } catch (e) {
+      console.error("Lỗi parse JSON arguments:", e);
+    }
+    console.log(`🔨 ${fn}/${args.type || "unknown"}`);
     let result;
     try {
       if (fn === "query_menu") {
@@ -161,19 +166,29 @@ app.post("/api/chat", async (req, res) => {
 
     console.log(`\n📨 [Từ khách ${customerid || "Ẩn danh"}]: ${prompt}`);
 
+    // 1. DỌN RÁC LỊCH SỬ
+    const cleanHistory = messages
+      .map((m) => ({
+        role: m.role,
+        content: m.content || "",
+      }))
+      .filter((m) => m.role === "user" || m.role === "assistant");
+
     // ========== VÒNG 1: Gửi user message + tools lên Groq ==========
     console.log("🧠 Vòng 1: Gửi user message + tools đến Groq...");
 
+    // 2. KHAI BÁO apiMessages ĐÚNG 1 LẦN DUY NHẤT
     let apiMessages = [
       { role: "system", content: SYSTEM_INSTRUCTION },
-      ...messages,
+      ...cleanHistory,
     ];
 
+    // 3. GỌI GROQ
     const response1 = await groq.chat.completions.create({
       messages: apiMessages,
       model: "llama-3.3-70b-versatile",
       tools: TOOLS,
-      tool_choice: "auto", // Groq tự quyết định call tool hay không
+      tool_choice: "auto",
       temperature: 0.5,
       max_tokens: 2000,
       top_p: 0.9,
@@ -181,19 +196,17 @@ app.post("/api/chat", async (req, res) => {
 
     const choice = response1.choices[0];
 
-    // Kiểm tra xem Groq có gọi tools không
     if (
       choice.finish_reason === "tool_calls" &&
       choice.message.tool_calls &&
       choice.message.tool_calls.length > 0
     ) {
-      console.log(
-        `\n🔨 Groq yêu cầu gọi ${choice.message.tool_calls.length} tools`,
-      );
-
-      // ⚠️ CRITICAL STEP 1: PUSH assistant message (nguyên gốc từ Groq) vào apiMessages
-      // Điều này BẮTBUỘC trước khi push tool results
-      apiMessages.push(choice.message);
+      // 4. PUSH ASSISTANT MESSAGE
+      apiMessages.push({
+        role: "assistant",
+        content: choice.message.content || "",
+        tool_calls: choice.message.tool_calls,
+      });
       console.log("   ✅ Pushed assistant message with tool_calls");
 
       // ========== VÒNG 2: Thực thi tools ==========
