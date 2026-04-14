@@ -9,3 +9,20 @@
   position: relative;
   background-color: #f5d5e0;
 }
+
+/* ============================================
+   ZALO WIDGET POSITIONING
+   Force Zalo bubble to position next to Chatbot
+   ============================================ */
+.zalo-chat-widget {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 100px !important;
+  z-index: 9999 !important;
+}
+
+.zalo-widget-container,
+.zalo-bubble-sm {
+  z-index: 9999 !important;
+  display: flex !important;
+}

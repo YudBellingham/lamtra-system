@@ -29,7 +29,6 @@ async function getMenuData(supabase, type, params = {}) {
           .from("products")
           .select("productid, name, baseprice, saleprice, label, status")
           .ilike("name", `%${searchTerm}%`)
-          .eq("status", "available")
           .limit(limit);
         return { success: !!data, data: data || [] };
       }
@@ -55,7 +54,6 @@ async function getMenuData(supabase, type, params = {}) {
           .from("products")
           .select("productid, name, baseprice, saleprice")
           .eq("categoryid", catData.categoryid)
-          .eq("status", "available")
           .limit(limit);
         return { success: !!data, data: data || [] };
       }
@@ -65,14 +63,12 @@ async function getMenuData(supabase, type, params = {}) {
           .from("products")
           .select("productid, name, baseprice, saleprice")
           .in("label", ["bestseller", "popular"])
-          .eq("status", "available")
           .limit(limit);
         if (!data || data.length < 3) {
           const { data: d } = await supabase
             .from("products")
             .select("productid, name, baseprice, saleprice")
             .not("saleprice", "is", null)
-            .eq("status", "available")
             .limit(limit);
           data = d || [];
         }
@@ -83,7 +79,9 @@ async function getMenuData(supabase, type, params = {}) {
         const prodId = product_id || productid;
         let query = supabase
           .from("products")
-          .select("productid, name, baseprice, saleprice, description, label");
+          .select(
+            "productid, name, baseprice, saleprice, description, label, subtitle, imageurl",
+          );
         if (prodId) query = query.eq("productid", prodId);
         else if (product_name) query = query.ilike("name", `%${product_name}%`);
         else
