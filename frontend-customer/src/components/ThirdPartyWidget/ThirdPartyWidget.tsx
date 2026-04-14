@@ -1,13 +1,3 @@
-/**
- * ZALO WIDGET POSITIONING
- * ================================
- * Vị trí: Bottom-Right (cạnh Chatbot AI)
- * Mục đích: Điều chỉnh positioning của Zalo bubble mặc định
- *
- * Zalo SDK tự inject icon và xử lý popup
- * Component này chỉ điều chỉnh vị trí để không overlap Chatbot
- */
-
 const ZaloWidget = () => {
   return (
     <style>{`
