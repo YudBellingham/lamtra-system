@@ -12,42 +12,48 @@
 
 /* ============================================
    ZALO WIDGET POSITIONING - RESPONSIVE
-   Adjusts based on screen size for all devices
+   Always positioned at BOTTOM-LEFT corner
+   Only adjust LEFT value based on screen width
+   No conflict between left/right properties
    ============================================ */
 
-/* Desktop (1024px and above) - Position next to Chatbot */
+/* All screens: Base positioning (Bottom-Left) */
 .zalo-chat-widget {
   position: fixed !important;
   bottom: 30px !important;
-  right: 100px !important;
+  left: 30px !important;
+  right: auto !important; /* Prevent Zalo SDK from using right property */
   z-index: 9999 !important;
 }
 
-/* Tablet (768px - 1023px) - Adjust positioning */
-@media (max-width: 1023px) {
-  .zalo-chat-widget {
-    right: 80px !important;
-  }
-}
-
-/* Mobile Large (480px - 767px) - Stack on left side to avoid Chatbot overlap */
-@media (max-width: 767px) {
-  .zalo-chat-widget {
-    left: 30px !important;
-    right: auto !important;
-  }
-}
-
-/* Mobile Small (below 480px) - Further adjust for very small screens */
-@media (max-width: 479px) {
-  .zalo-chat-widget {
-    left: 20px !important;
-    bottom: 100px !important;
-  }
-}
-
+/* Ensure all Zalo elements are visible and fixed */
 .zalo-widget-container,
-.zalo-bubble-sm {
+.zalo-bubble-sm,
+[data-zalo-widget] {
+  position: fixed !important;
   z-index: 9999 !important;
   display: flex !important;
+}
+
+/* Tablet (768px - 1023px) - Slightly more right margin */
+@media (max-width: 1023px) {
+  .zalo-chat-widget {
+    left: 25px !important;
+  }
+}
+
+/* Mobile Large (480px - 767px) - Adjust for smaller screens */
+@media (max-width: 767px) {
+  .zalo-chat-widget {
+    left: 20px !important;
+    bottom: 80px !important; /* Slightly higher to avoid overlap with other UI */
+  }
+}
+
+/* Mobile Small (below 480px) - Small screens */
+@media (max-width: 479px) {
+  .zalo-chat-widget {
+    left: 15px !important;
+    bottom: 70px !important;
+  }
 }
