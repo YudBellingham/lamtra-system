@@ -1,130 +1,355 @@
 /**
- * OPTIMIZED TOOL REGISTRY - 5 consolidated tools
- * Reduced from 19 → 5 tools (73% reduction in schema size)
- * Schema: ~1200 tokens (vs 5000+ before)
+ * FOCUSED TOOL REGISTRY - 15 single-purpose tools
+ * PRINCIPLE: Each tool has EXPLICIT, MINIMAL parameters
+ * NO ambiguity → Groq's validator will accept all calls
+ *
+ * Architecture:
+ * - MENU: 5 tools (search, categories, bestsellers, details, extras)
+ * - CUSTOMER: 4 tools (loyalty, orders, favorites, templates)
+ * - ORDER: 2 tools (status, details)
+ * - BRANCH: 3 tools (list, info, menu)
+ * - POLICY: 2 tools (loyalty, shipping)
  */
 
 const TOOLS = [
+  // ═══════════════════════════════════════════════════════════════
+  // MENU TOOLS (5)
+  // ═══════════════════════════════════════════════════════════════
   {
     type: "function",
     function: {
-      name: "query_menu",
-      description:
-        "Menu data: search, categories, bestsellers, sizes, toppings, details",
+      name: "menu_search",
+      description: "Search for products by name or keyword",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: {
+            type: "string",
+            description:
+              "Product name or keyword (e.g., 'trà chanh', 'cà phê')",
+          },
+          limit: {
+            type: "integer",
+            default: 10,
+            description: "Maximum results to return",
+          },
+        },
+        required: ["keyword"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "menu_categories",
+      description: "Get all available product categories",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            default: 20,
+            description: "Maximum categories to return",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "menu_bestsellers",
+      description: "Get best-selling or popular products",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            default: 5,
+            description: "Number of bestsellers to return",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "menu_product_details",
+      description: "Get detailed information about a specific product",
+      parameters: {
+        type: "object",
+        properties: {
+          product_id: {
+            type: "integer",
+            description: "Product ID number",
+          },
+          product_name: {
+            type: "string",
+            description: "Product name to search for",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "menu_extras",
+      description: "Get toppings or sizes available for drinks",
       parameters: {
         type: "object",
         properties: {
           type: {
+            type: "string",
+            enum: ["toppings", "sizes"],
+            description: "Type of extras to retrieve",
+          },
+          limit: {
+            type: "integer",
+            default: 20,
+            description: "Maximum items to return",
+          },
+        },
+        required: ["type"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CUSTOMER TOOLS (4)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "customer_loyalty",
+      description: "Get customer loyalty points and membership information",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: {
+            type: "integer",
+            description: "Customer ID",
+          },
+          phone_number: {
+            type: "string",
+            description: "Customer phone number (10 digits)",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "customer_orders",
+      description: "Get customer order history",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: {
+            type: "integer",
+            description: "Customer ID",
+          },
+          order_status: {
             type: "string",
             enum: [
-              "search",
-              "category",
-              "bestseller",
-              "details",
-              "toppings",
-              "sizes",
-              "categories",
+              "pending",
+              "confirmed",
+              "preparing",
+              "ready",
+              "delivering",
+              "delivered",
+              "cancelled",
             ],
-            description: "Query type",
+            description: "Filter by order status",
           },
-          keyword: { type: "string", description: "Search term" },
-          category_name: { type: "string", description: "Category name" },
-          product_name: { type: "string", description: "Product name" },
-          productid: { type: "integer", description: "Product ID" },
-          limit: { type: "integer", description: "Result limit" },
+          limit: {
+            type: "integer",
+            default: 10,
+            description: "Maximum orders to return",
+          },
         },
-        required: ["type"],
+        required: ["customer_id"],
       },
     },
   },
   {
     type: "function",
     function: {
-      name: "query_customer",
-      description:
-        "Customer data: loyalty, orders, favorites, templates, phone search",
+      name: "customer_favorites",
+      description: "Get customer's favorite products",
       parameters: {
         type: "object",
         properties: {
-          type: {
-            type: "string",
-            enum: ["loyalty", "orders", "favorites", "templates", "search"],
-            description: "Query type",
+          customer_id: {
+            type: "integer",
+            description: "Customer ID",
           },
-          customerid: { type: "integer", description: "Customer ID" },
-          authid: { type: "string", description: "Auth UUID" },
-          phone: { type: "string", description: "Phone (10 digits)" },
-          status_filter: { type: "string", description: "Order status" },
-          limit: { type: "integer", description: "Result limit" },
+          limit: {
+            type: "integer",
+            default: 10,
+            description: "Maximum favorites to return",
+          },
         },
-        required: ["type"],
+        required: ["customer_id"],
       },
     },
   },
   {
     type: "function",
     function: {
-      name: "query_order",
-      description: "Order data: status, detailed info with items",
+      name: "customer_templates",
+      description: "Get customer's saved drink templates/combos",
       parameters: {
         type: "object",
         properties: {
-          type: {
-            type: "string",
-            enum: ["status", "details"],
-            description: "Query type",
+          customer_id: {
+            type: "integer",
+            description: "Customer ID",
           },
-          orderid: { type: "string", description: "Order ID" },
-          customerid: { type: "integer", description: "Customer ID (verify)" },
+          limit: {
+            type: "integer",
+            default: 10,
+            description: "Maximum templates to return",
+          },
         },
-        required: ["type", "orderid"],
+        required: ["customer_id"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ORDER TOOLS (2)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "order_status",
+      description: "Get current status of an order",
+      parameters: {
+        type: "object",
+        properties: {
+          order_id: {
+            type: "string",
+            description: "Order ID or order number",
+          },
+          customer_id: {
+            type: "integer",
+            description: "Customer ID (optional, for verification)",
+          },
+        },
+        required: ["order_id"],
       },
     },
   },
   {
     type: "function",
     function: {
-      name: "query_branch",
-      description: "Branch data: list all, info, menu status",
+      name: "order_details",
+      description: "Get detailed information about an order with all items",
       parameters: {
         type: "object",
         properties: {
-          type: {
+          order_id: {
             type: "string",
-            enum: ["list", "info", "menu"],
-            description: "Query type",
+            description: "Order ID or order number",
           },
-          branch_name: { type: "string", description: "Branch name" },
-          branchid: { type: "integer", description: "Branch ID" },
-          status_filter: {
-            type: "string",
-            enum: ["available", "unavailable", "all"],
-            description: "Product filter",
-          },
-          include_closed: {
+        },
+        required: ["order_id"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // BRANCH TOOLS (3)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "branch_list",
+      description: "Get list of all Lam Trà branches",
+      parameters: {
+        type: "object",
+        properties: {
+          include_inactive: {
             type: "boolean",
+            default: false,
             description: "Include closed branches",
           },
         },
-        required: ["type"],
       },
     },
   },
   {
     type: "function",
     function: {
-      name: "query_policy",
-      description: "Business policies: loyalty program, shipping info",
+      name: "branch_info",
+      description: "Get detailed information about a specific branch",
       parameters: {
         type: "object",
         properties: {
-          type: {
+          branch_id: {
+            type: "integer",
+            description: "Branch ID number",
+          },
+          branch_name: {
             type: "string",
-            enum: ["loyalty", "shipping"],
-            description: "Policy type",
+            description: "Branch name to search for",
           },
         },
-        required: ["type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "branch_menu",
+      description: "Get products available at a specific branch",
+      parameters: {
+        type: "object",
+        properties: {
+          branch_id: {
+            type: "integer",
+            description: "Branch ID number",
+          },
+          branch_name: {
+            type: "string",
+            description: "Branch name",
+          },
+          product_status: {
+            type: "string",
+            enum: ["available", "unavailable", "all"],
+            default: "available",
+            description: "Filter by product availability",
+          },
+        },
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // POLICY TOOLS (2)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "policy_loyalty",
+      description: "Get information about Lam Trà loyalty program",
+      parameters: {
+        type: "object",
+        properties: {},
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "policy_shipping",
+      description: "Get information about shipping and delivery",
+      parameters: {
+        type: "object",
+        properties: {},
       },
     },
   },

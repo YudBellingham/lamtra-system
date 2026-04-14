@@ -1,16 +1,23 @@
 /**
  * BRANCH TOOLS - Consolidated branch queries
  * Gộp: list, info, menu status
+ * FIX: Parameter name mapping
  */
 
 async function getBranchData(supabase, type, params = {}) {
   try {
+    // Normalize parameter names
     const {
       include_closed = false,
       branch_name,
-      branchid,
-      status_filter = "available",
+      branch_id = params.branchid,
+      branchid = params.branch_id,
+      product_status = params.status_filter || "available",
+      status_filter = params.product_status,
     } = params;
+
+    const parsedBranchId = branch_id || branchid;
+    const parsedProductStatus = product_status || status_filter || "available";
 
     switch (type) {
       case "list": {
@@ -38,10 +45,13 @@ async function getBranchData(supabase, type, params = {}) {
         let q = supabase
           .from("branches")
           .select("branchid, name, address, phone, opentime, closetime");
-        if (branchid) q = q.eq("branchid", parseInt(branchid));
+        if (parsedBranchId) q = q.eq("branchid", parseInt(parsedBranchId));
         else if (branch_name) q = q.ilike("name", `%${branch_name}%`);
         else
-          return { success: false, error: "branchid or branch_name required" };
+          return {
+            success: false,
+            error: "branch_id hoặc branch_name là bắt buộc",
+          };
         const { data } = await q.single();
         return {
           success: !!data,
@@ -58,23 +68,28 @@ async function getBranchData(supabase, type, params = {}) {
       }
 
       case "menu": {
-        if (!branchid && !branch_name)
-          return { success: false, error: "branchid or branch_name required" };
-        let bid = branchid;
+        if (!parsedBranchId && !branch_name)
+          return {
+            success: false,
+            error: "branch_id hoặc branch_name là bắt buộc",
+          };
+        let bid = parsedBranchId;
         if (!bid && branch_name) {
           const { data: bData } = await supabase
             .from("branches")
             .select("branchid")
             .ilike("name", `%${branch_name}%`)
             .single();
-          if (!bData) return { success: false, error: "Branch not found" };
+          if (!bData)
+            return { success: false, error: "Không tìm thấy chi nhánh" };
           bid = bData.branchid;
         }
         let q = supabase
           .from("branchproductstatus")
           .select("*, products(name, baseprice)")
           .eq("branchid", bid);
-        if (status_filter !== "all") q = q.eq("status", status_filter);
+        if (parsedProductStatus !== "all")
+          q = q.eq("status", parsedProductStatus);
         const { data } = await q;
         return {
           success: !!data,

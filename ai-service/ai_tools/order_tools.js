@@ -1,23 +1,39 @@
 /**
  * ORDER TOOLS - Consolidated order queries
  * Gộp: status, details
+ * FIX: Parameter name mapping
  */
 
 async function getOrderInfo(supabase, type, params = {}) {
   try {
-    const { orderid, customerid } = params;
-    if (!orderid) return { success: false, error: "orderid required" };
+    // Normalize parameter names
+    const {
+      order_id = params.orderid,
+      orderid = params.order_id,
+      customer_id = params.customerid,
+      customerid = params.customer_id,
+    } = params;
+
+    const parsedOrderId = order_id || orderid;
+    const parsedCustomerId = customer_id || customerid;
+
+    if (!parsedOrderId)
+      return { success: false, error: "order_id là bắt buộc" };
 
     switch (type) {
       case "status": {
         let q = supabase
           .from("orders")
           .select("orderid, status, finalamount, orderdate, paymentmethod")
-          .eq("orderid", orderid);
-        if (customerid) q = q.eq("customerid", parseInt(customerid));
+          .eq("orderid", parsedOrderId);
+        if (parsedCustomerId)
+          q = q.eq("customerid", parseInt(parsedCustomerId));
         const { data } = await q.single();
         if (!data)
-          return { success: false, error: `Order ${orderid} not found` };
+          return {
+            success: false,
+            error: `Không tìm thấy đơn hàng ${parsedOrderId}`,
+          };
         const statusMap = {
           pending: "Chờ xác nhận",
           confirmed: "Đã xác nhận",
@@ -46,15 +62,17 @@ async function getOrderInfo(supabase, type, params = {}) {
           .select(
             "orderid, status, finalamount, discountamount, shippingfee, orderdate",
           )
-          .eq("orderid", orderid);
-        if (customerid) oq = oq.eq("customerid", parseInt(customerid));
+          .eq("orderid", parsedOrderId);
+        if (parsedCustomerId)
+          oq = oq.eq("customerid", parseInt(parsedCustomerId));
         const { data: orderData } = await oq.single();
-        if (!orderData) return { success: false, error: "Order not found" };
+        if (!orderData)
+          return { success: false, error: "Không tìm thấy đơn hàng" };
 
         const { data: items } = await supabase
           .from("orderdetails")
           .select(`*, products(name), sizes(name)`)
-          .eq("orderid", orderid);
+          .eq("orderid", parsedOrderId);
 
         const itemsWithToppings = await Promise.all(
           (items || []).map(async (item) => {

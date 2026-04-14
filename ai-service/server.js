@@ -45,68 +45,23 @@ app.use(express.json());
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ==================== SYSTEM INSTRUCTION ====================
-const SYSTEM_INSTRUCTION = `
-═════════════════════════════════════════════════════════════════
-🤖 LAM TRÀ AI ASSISTANT - AGENTIC FUNCTION CALLING v3.0
-═════════════════════════════════════════════════════════════════
+const SYSTEM_INSTRUCTION = `Bạn là nhân viên chăm sóc khách hàng AI của tiệm trà sữa LAM TRÀ.
+Nhiệm vụ của bạn là tư vấn cho khách hàng về menu, đơn hàng, điểm thành viên một cách thân thiện và tự nhiên.
 
-BẠN LÀ AI AGENT THÔNG MINH CỦA TIỆM TRÀ SỮA LAM TRÀ
-Sử dụng công nghệ Function Calling để tương tác với Database một cách thông minh
-
-CÁC NGUYÊN TẮC HOẠT ĐỘNG:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. 🔍 PHÂN TÍCH INTENT THÔNG MINH:
-   - Lắng nghe câu hỏi của khách, hiểu rõ ý định thực sự
-   - Xác định cần gọi hàm nào (function calling) để lấy dữ liệu
-   - Nếu cần nhiều dữ liệu, gọi nhiều hàm một cách hợp lý
-
-2. 🛠️ SỬ DỤNG FUNCTION CALLING:
-   - Sử dụng các tools có sẵn trong danh sách functions để query database
-   - KHÔNG BỊA RA DỮ LIỆU - LUÔN query từ database
-   - Truyền tham số chính xác vào các functions
-
-3. 💬 PHONG CÁCH TRỐNG CHUYỆN:
-   - Thân thiện, tự nhiên, vui vẻ như nhân viên cửa hàng
-   - CHITCHAT: Nếu khách chào hỏi, nói chuyện phiếm → Trả lời tự nhiên + khéo léo nối vào Lam Trà
-   - Ngắn gọn: 2-4 dòng là tốt
-   - Kết thúc với gợi ý hoặc câu hỏi lại
-
-4. 🎯 KHI CÓ KẾT QUẢ FUNCTION:
-   - Phân tích kết quả, chọn thông tin liên quan
-   - Trình bày bằng ngôn ngữ tự nhiên, thân thiện
-   - Nếu không có kết quả, nói rõ + gợi ý giải pháp
-
-5. 🚫 XỨ LÝ LỖI:
-   - Nếu hàm trả về lỗi, giải thích cho khách một cách tự nhiên
-   - Ví dụ: "Dạ, hiện tại hệ thống đang bận. Bạn thử lại trong chốc lát được không? 😊"
-
-6. 🔒 BẢO MẬT & QUYỀN RIÊNG TƯ:
-   - TUYỆT ĐỐI KHÔNG hiển thị: authid, password, mật khẩu
-   - Chỉ hiển thị dữ liệu của khách hàng đang chat
-   - Luôn xác thực quyền truy cập trước khi hiển thị thông tin cá nhân
-
-7. 📊 UPSELL TỰ NHIÊN:
-   - Gợi ý sản phẩm một cách tự nhiên (không ép buộc)
-   - Ví dụ: Khách hỏi trà → gợi ý topping, size
-   - Khách hỏi best seller → gợi ý các sản phẩm bán chạy + combo hemat
-
-═════════════════════════════════════════════════════════════════
-
-THÀNH CÔ NGUÔI KHOÁ THỨNG HỎI:
-- query_menu (search, category, bestseller, details, toppings, sizes)
-- query_customer (loyalty, orders, favorites, templates, search)
-- query_order (status, details)
-- query_branch (list, info, menu)
-- query_policy (loyalty, shipping)
-
-═════════════════════════════════════════════════════════════════
+⚠️ QUY TẮC SỐNG CÒN (KHÔNG ĐƯỢC VI PHẠM):
+1. BẠN PHẢI TỰ ĐỘNG GỌI TOOL/FUNCTION KHI CẦN. Thay vì liệt kê hệ thống máy móc cho khách nghe, hãy ngầm gọi tool để lấy kết quả rồi tư vấn như một con người thực thụ.
+2. TUYỆT ĐỐI KHÔNG BAO GIỜ để lộ các thuật ngữ kỹ thuật, tên function (như menu_search, customer_loyalty...) ra màn hình trả lời.
+3. Khi khách hỏi cộc lốc: "menu", "menu có gì", "quán bán gì", hãy GỌI FUNCTION menu_categories hoặc menu_bestsellers ngay lập tức, sau đó dùng kết quả để chào khách: "Dạ menu bên em có các món...".
+4. TRẢ LỜI NGẮN GỌN (1-3 câu), thân thiện, ngắt dòng dễ nhìn, chèn emoji (🥤, 🧋, 😊).
+5. TRẢ LỜI ĐÚNG TRỌNG TÂM: Chỉ dựa trên dữ liệu lấy từ database. Không tự bịa.
+6. THÔNG TIN CÁ NHÂN: Nếu khách hỏi điểm, lịch sử mua... mà không có dữ liệu: "Dạ, bạn cho mình xin số điện thoại để tra cứu nha! 😊"
 `;
 
 // ==================== FUNCTION CALLING EXECUTOR ====================
 /**
- * Hàm xử lý tool calls từ Groq (5 consolidated tools tối ưu)
- * Giảm từ 19 → 5 tools, schema nhỏ hơn 73%
+ * Hàm xử lý tool calls từ Groq (15 focused tools)
+ * MẢP: Tên tool mới → function handlers cũ
+ * PRINCIPLE: Each tool call is EXPLICIT and CLEAR for Groq
  */
 async function processFunctionCalls(toolCalls, customerid = null) {
   const results = [];
@@ -114,38 +69,100 @@ async function processFunctionCalls(toolCalls, customerid = null) {
     const fn = toolCall.function.name;
     let args = {};
     try {
-      args = JSON.parse(toolCall.function.arguments || "{}");
+      const argsStr = toolCall.function.arguments || "{}";
+      args = JSON.parse(argsStr) || {}; // Bắt lỗi trường hợp JSON.parse ra null
+      console.log(`   📍 Parsed args:`, args);
     } catch (e) {
-      console.error("Lỗi parse JSON arguments:", e);
+      console.error(`   ❌ JSON parse fail for ${fn}:`, e.message);
+      console.error(`   📝 Raw arguments string:`, toolCall.function.arguments);
     }
-    console.log(`🔨 ${fn}/${args.type || "unknown"}`);
+
+    console.log(`🔨 Calling: ${fn}`);
+
     let result;
     try {
-      if (fn === "query_menu") {
+      // ═══════════════════════════════════════════════════════════════
+      // MENU TOOLS
+      // ═══════════════════════════════════════════════════════════════
+      if (fn === "menu_search") {
+        result = await aiTools.getMenuData(supabase, "search", args);
+      } else if (fn === "menu_categories") {
+        result = await aiTools.getMenuData(supabase, "categories", args);
+      } else if (fn === "menu_bestsellers") {
+        result = await aiTools.getMenuData(supabase, "bestseller", args);
+      } else if (fn === "menu_product_details") {
+        result = await aiTools.getMenuData(supabase, "details", args);
+      } else if (fn === "menu_extras") {
+        // args.type = "toppings" or "sizes"
         result = await aiTools.getMenuData(supabase, args.type, args);
-      } else if (fn === "query_customer") {
-        result = await aiTools.getCustomerData(supabase, args.type, {
+      }
+      // ═══════════════════════════════════════════════════════════════
+      // CUSTOMER TOOLS
+      // ═══════════════════════════════════════════════════════════════
+      else if (fn === "customer_loyalty") {
+        // Inject customerid from context if available
+        result = await aiTools.getCustomerData(supabase, "loyalty", {
           ...args,
-          customerid: args.customerid || customerid,
+          customer_id: args.customer_id || customerid,
         });
-      } else if (fn === "query_order") {
-        result = await aiTools.getOrderInfo(supabase, args.type, {
+      } else if (fn === "customer_orders") {
+        result = await aiTools.getCustomerData(supabase, "orders", {
           ...args,
-          customerid: args.customerid || customerid,
+          customer_id: args.customer_id || customerid,
         });
-      } else if (fn === "query_branch") {
-        result = await aiTools.getBranchData(supabase, args.type, args);
-      } else if (fn === "query_policy") {
-        result = aiTools.getBusinessPolicy(args.type, args);
+      } else if (fn === "customer_favorites") {
+        result = await aiTools.getCustomerData(supabase, "favorites", {
+          ...args,
+          customer_id: args.customer_id || customerid,
+        });
+      } else if (fn === "customer_templates") {
+        result = await aiTools.getCustomerData(supabase, "templates", {
+          ...args,
+          customer_id: args.customer_id || customerid,
+        });
+      }
+      // ═══════════════════════════════════════════════════════════════
+      // ORDER TOOLS
+      // ═══════════════════════════════════════════════════════════════
+      else if (fn === "order_status") {
+        result = await aiTools.getOrderInfo(supabase, "status", {
+          ...args,
+          customer_id: args.customer_id || customerid,
+        });
+      } else if (fn === "order_details") {
+        result = await aiTools.getOrderInfo(supabase, "details", {
+          ...args,
+          customer_id: args.customer_id || customerid,
+        });
+      }
+      // ═══════════════════════════════════════════════════════════════
+      // BRANCH TOOLS
+      // ═══════════════════════════════════════════════════════════════
+      else if (fn === "branch_list") {
+        result = await aiTools.getBranchData(supabase, "list", args);
+      } else if (fn === "branch_info") {
+        result = await aiTools.getBranchData(supabase, "info", args);
+      } else if (fn === "branch_menu") {
+        result = await aiTools.getBranchData(supabase, "menu", args);
+      }
+      // ═══════════════════════════════════════════════════════════════
+      // POLICY TOOLS
+      // ═══════════════════════════════════════════════════════════════
+      else if (fn === "policy_loyalty") {
+        result = aiTools.getBusinessPolicy("loyalty", args);
+      } else if (fn === "policy_shipping") {
+        result = aiTools.getBusinessPolicy("shipping", args);
       } else {
-        result = { success: false, error: `Unknown: ${fn}` };
+        result = { success: false, error: `Unknown function: ${fn}` };
       }
     } catch (err) {
-      console.error(`❌ ${fn}:`, err.message);
+      console.error(`   ❌ Function execution error in ${fn}:`, err.message);
+      console.error(`   📋 Stack:`, err.stack);
       result = { success: false, error: err.message };
     }
+
     results.push({ tool_call_id: toolCall.id, function_name: fn, result });
-    console.log(`✅ ${fn}/${args.type}`);
+    console.log(`   ✅ ${fn} completed`);
   }
   return results;
 }
@@ -178,29 +195,55 @@ app.post("/api/chat", async (req, res) => {
     console.log("🧠 Vòng 1: Gửi user message + tools đến Groq...");
 
     // 2. KHAI BÁO apiMessages ĐÚNG 1 LẦN DUY NHẤT
+    // Add customer context to system instruction if customerid available
+    let systemInstruction = SYSTEM_INSTRUCTION;
+    if (customerid) {
+      systemInstruction += `\n\n🔹 KHÁCH HÀNG HIỆN TẠI (ĐÃ ĐĂNG NHẬP): Mã khách ${customerid}
+-> Bạn KHÔNG ĐƯỢC HỎI LẠI số điện thoại nếu khách muốn tra cứu thông tin cá nhân.
+-> Mọi function yêu cầu customer_id, HÃY TỰ CHUYỂN customer_id: hiện tại thành số (ví dụ: ${customerid}).`;
+    } else {
+      systemInstruction += `\n\n🔹 KHÁCH HÀNG CHƯA ĐĂNG NHẬP
+Nếu user hỏi về thông tin cá nhân, bắt buộc phải hỏi số điện thoại hoặc mã khách!`;
+    }
+
     let apiMessages = [
-      { role: "system", content: SYSTEM_INSTRUCTION },
+      { role: "system", content: systemInstruction },
       ...cleanHistory,
     ];
 
     // 3. GỌI GROQ
     const response1 = await groq.chat.completions.create({
       messages: apiMessages,
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.3-70b-versatile", // Quay trở lại model 70b vì lệnh trước đó hết rate limit đã trôi qua
       tools: TOOLS,
       tool_choice: "auto",
-      temperature: 0.5,
+      temperature: 0.1, // Giảm temperature để tránh hallucination
       max_tokens: 2000,
       top_p: 0.9,
     });
 
+    console.log(
+      `   📊 Groq response received - Finish reason: ${response1.choices[0]?.finish_reason}`,
+    );
+
     const choice = response1.choices[0];
+    if (!choice) {
+      console.error("   ❌ Groq returned no choices");
+      return res.json({
+        reply:
+          "Xin lỗi, không nhận được phản hồi từ AI. Bạn thử lại được không? 😊",
+      });
+    }
 
     if (
       choice.finish_reason === "tool_calls" &&
-      choice.message.tool_calls &&
+      choice.message?.tool_calls &&
       choice.message.tool_calls.length > 0
     ) {
+      console.log(
+        `   🔧 Tool calls detected: ${choice.message.tool_calls.length} calls`,
+      );
+
       // 4. PUSH ASSISTANT MESSAGE
       apiMessages.push({
         role: "assistant",
@@ -214,6 +257,10 @@ app.post("/api/chat", async (req, res) => {
         choice.message.tool_calls,
         customerid,
       );
+
+      if (toolResults.length === 0) {
+        console.warn("   ⚠️  Không có tool results được trả về");
+      }
 
       // ========== VÒNG 3: PUSH tool results vào apiMessages ==========
       console.log("\n🧠 Vòng 3: Push tool results vào messages...");
@@ -243,7 +290,7 @@ app.post("/api/chat", async (req, res) => {
       const response2 = await groq.chat.completions.create({
         messages: apiMessages, // Sử dụng mảng đã được update
         model: "llama-3.3-70b-versatile",
-        temperature: 0.5,
+        temperature: 0.1,
         max_tokens: 800,
         top_p: 0.9,
         // NOTE: Không gửi tools lần 2 - chỉ để hoàn thành response
@@ -268,8 +315,15 @@ app.post("/api/chat", async (req, res) => {
     }
   } catch (error) {
     console.error("\n❌ LỖI AI SERVICE:");
-    console.error("Error:", error.message);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error status:", error.status);
     console.error("Stack:", error.stack);
+
+    // Check if it's a Groq/API error
+    if (error.response) {
+      console.error("API Response:", error.response);
+    }
 
     res.json({
       reply:
@@ -288,12 +342,21 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`\n✨ Lam Trà AI Agent (v3.1 - Optimized)`);
+  console.log(`\n✨ Lam Trà AI Agent (v3.3 - Fast Test Mode)`);
   console.log(`📍 http://localhost:${port}`);
-  console.log(`🤖 Model: llama-3.3-70b-versatile (Groq)`);
+  console.log(`🤖 Model: llama-3.1-8b-instant (Groq)`);
   console.log(
-    `🔧 Architecture: Agentic Function Calling (5 consolidated tools)`,
+    `🔧 Architecture: 15 Focused Single-Purpose Tools (No Ambiguity)`,
   );
-  console.log(`📦 Tools: ${TOOLS.length} tools | 73% context reduction`);
+  console.log(`📦 Tool Categories:`);
+  console.log(
+    `   🍵 Menu: 5 tools (search, categories, bestsellers, details, extras)`,
+  );
+  console.log(
+    `   👤 Customer: 4 tools (loyalty, orders, favorites, templates)`,
+  );
+  console.log(`   📦 Orders: 2 tools (status, details)`);
+  console.log(`   🏪 Branches: 3 tools (list, info, menu)`);
+  console.log(`   📜 Policies: 2 tools (loyalty, shipping)`);
   console.log(`🚀 Status: Ready | Database: Connected\n`);
 });
