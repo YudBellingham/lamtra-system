@@ -1,30 +1,19 @@
 /**
- * AI TOOLS INDEX
- * Export tất cả các tool modules
+ * AI TOOLS INDEX - Consolidated exports
  */
 
-const customerTools = require("./customer_tools");
-const menuTools = require("./menu_tools");
-const orderTools = require("./order_tools");
-const branchTools = require("./branch_tools");
-const businessInfoTools = require("./business_info_tools");
 const TOOLS = require("./tool_registry");
+const { getMenuData } = require("./menu_tools");
+const { getCustomerData } = require("./customer_tools");
+const { getOrderInfo } = require("./order_tools");
+const { getBranchData } = require("./branch_tools");
+const { getBusinessPolicy } = require("./business_info_tools");
 
 module.exports = {
-  // Tools definition (JSON Schema)
   TOOLS,
-
-  // Tool implementations (grouped by module)
-  customerTools,
-  menuTools,
-  orderTools,
-  branchTools,
-  businessInfoTools,
-
-  // Flat exports for easier access
-  ...customerTools,
-  ...menuTools,
-  ...orderTools,
-  ...branchTools,
-  ...businessInfoTools,
+  getMenuData,
+  getCustomerData,
+  getOrderInfo,
+  getBranchData,
+  getBusinessPolicy,
 };
