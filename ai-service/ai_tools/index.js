@@ -1,7 +1,3 @@
-/**
- * AI TOOLS INDEX - Consolidated exports
- */
-
 const TOOLS = require("./tool_registry");
 const { getMenuData } = require("./menu_tools");
 const { getCustomerData } = require("./customer_tools");

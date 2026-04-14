@@ -191,11 +191,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ==================== RESEND EMAIL SERVICE (Optional) ====================
+// Chỉ initialize nếu có RESEND_API_KEY
 const { Resend } = require("resend");
-const resendInstance = new Resend(process.env.RESEND_API_KEY);
+let resendInstance = null;
+
+if (process.env.RESEND_API_KEY) {
+  try {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+    console.log("✅ Resend Email Service: Initialized");
+  } catch (err) {
+    console.warn("⚠️  Resend initialization failed:", err.message);
+  }
+} else {
+  console.warn("⚠️  RESEND_API_KEY not found - Email feature will be disabled");
+}
 
 app.post("/api/send-application", async (req, res) => {
   try {
+    // Check if Resend is available
+    if (!resendInstance) {
+      return res.status(503).json({
+        status: "error",
+        message:
+          "Email service is not configured. Please add RESEND_API_KEY to .env",
+      });
+    }
+
     const {
       fullName,
       phone,
@@ -334,12 +356,10 @@ app.post("/api/create_payment_url", (req, res) => {
     const returnUrl = vnp_Config.vnp_ReturnUrl;
 
     if (!tmnCode || !secretKey || !vnpUrl || !returnUrl) {
-      return res
-        .status(500)
-        .json({
-          error:
-            "Cấu hình VNPay không hợp lệ hoặc thiếu trong .env (TMNCODE, HASHSECRET, URL, RETURNURL)",
-        });
+      return res.status(500).json({
+        error:
+          "Cấu hình VNPay không hợp lệ hoặc thiếu trong .env (TMNCODE, HASHSECRET, URL, RETURNURL)",
+      });
     }
 
     const date = new Date();
@@ -419,12 +439,10 @@ app.post("/api/estimate-shipping", async (req, res) => {
     let fallbackLevel = 0;
 
     if (!targetLat || !targetLng) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Không nhận được tọa độ địa chỉ. Vui lòng chọn địa chỉ từ gợi ý.",
-        });
+      return res.status(400).json({
+        error:
+          "Không nhận được tọa độ địa chỉ. Vui lòng chọn địa chỉ từ gợi ý.",
+      });
     }
 
     const requiredIngredients = await calculateIngredients(cart, supabase);
@@ -463,12 +481,10 @@ app.post("/api/estimate-shipping", async (req, res) => {
     }
 
     if (branchesMeta.length === 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Rất tiếc, khoảng cách giao hàng trên 15km hoặc không có chi nhánh đang mở cửa gần bạn.",
-        });
+      return res.status(400).json({
+        error:
+          "Rất tiếc, khoảng cách giao hàng trên 15km hoặc không có chi nhánh đang mở cửa gần bạn.",
+      });
     }
 
     branchesMeta.sort((a, b) => a.distance - b.distance);
@@ -562,22 +578,17 @@ app.post("/api/checkout", async (req, res) => {
         matrixResult.length > 0 ? matrixResult[0].distanceKm : Infinity;
 
       if (distance === Infinity) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Không thể định tuyến đường đi bằng xe máy tới địa điểm này.",
-          });
+        return res.status(400).json({
+          error: "Không thể định tuyến đường đi bằng xe máy tới địa điểm này.",
+        });
       }
 
       shippingFee = calculateShippingFee(distance);
       if (shippingFee === -1) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Rất tiếc, khoảng cách giao hàng trên 15km Lam Trà không thể phục vụ.",
-          });
+        return res.status(400).json({
+          error:
+            "Rất tiếc, khoảng cách giao hàng trên 15km Lam Trà không thể phục vụ.",
+        });
       }
 
       const capability = await checkBranchCapability(
@@ -587,11 +598,9 @@ app.post("/api/checkout", async (req, res) => {
         supabase,
       );
       if (!capability.available) {
-        return res
-          .status(400)
-          .json({
-            error: `Chi nhánh đã chọn hiện tại hết hàng (${capability.outOfStockItems.join(", ")}). Vui lòng chọn lại chi nhánh khác.`,
-          });
+        return res.status(400).json({
+          error: `Chi nhánh đã chọn hiện tại hết hàng (${capability.outOfStockItems.join(", ")}). Vui lòng chọn lại chi nhánh khác.`,
+        });
       }
     } else {
       branchId = customerInfo.branchid;
@@ -606,11 +615,9 @@ app.post("/api/checkout", async (req, res) => {
         supabase,
       );
       if (!capability.available) {
-        return res
-          .status(400)
-          .json({
-            error: `Cửa hàng này hiện đang tạm hết nguyên liệu cho đơn hàng của bạn (${capability.outOfStockItems.join(", ")}). Vui lòng điều chỉnh giỏ hàng hoặc chọn chi nhánh khác.`,
-          });
+        return res.status(400).json({
+          error: `Cửa hàng này hiện đang tạm hết nguyên liệu cho đơn hàng của bạn (${capability.outOfStockItems.join(", ")}). Vui lòng điều chỉnh giỏ hàng hoặc chọn chi nhánh khác.`,
+        });
       }
     }
 
@@ -623,11 +630,9 @@ app.post("/api/checkout", async (req, res) => {
         .single();
       if (vInfo) {
         if (totalAmount < (vInfo.minordervalue || 0)) {
-          return res
-            .status(400)
-            .json({
-              error: `Đơn hàng chưa đủ giá trị tối thiểu ${vInfo.minordervalue}đ để dùng mã này.`,
-            });
+          return res.status(400).json({
+            error: `Đơn hàng chưa đủ giá trị tối thiểu ${vInfo.minordervalue}đ để dùng mã này.`,
+          });
         }
         if (vInfo.discounttype === "%") {
           calculatedDiscount = (totalAmount * vInfo.discountvalue) / 100;
@@ -817,11 +822,9 @@ app.post("/api/orders/reorder", async (req, res) => {
     }
 
     if (reorderCart.length === 0) {
-      return res
-        .status(400)
-        .json({
-          error: "Tất cả các món trong đơn hàng này hiện đã ngừng kinh doanh.",
-        });
+      return res.status(400).json({
+        error: "Tất cả các món trong đơn hàng này hiện đã ngừng kinh doanh.",
+      });
     }
 
     // 3. Kiểm tra Kho và Tải trọng tại chi nhánh phát sinh đơn cũ
@@ -895,19 +898,15 @@ app.post("/api/customers/update-profile", async (req, res) => {
       return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin." });
     }
     if (!phoneRegex.test(phone)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Số điện thoại không hợp lệ (phải có đủ 10 chữ số và bắt đầu bằng số 0).",
-        });
+      return res.status(400).json({
+        error:
+          "Số điện thoại không hợp lệ (phải có đủ 10 chữ số và bắt đầu bằng số 0).",
+      });
     }
     if (!emailRegex.test(email)) {
-      return res
-        .status(400)
-        .json({
-          error: "Email không hợp lệ hoặc sai chính tả (vd: @gmail.com).",
-        });
+      return res.status(400).json({
+        error: "Email không hợp lệ hoặc sai chính tả (vd: @gmail.com).",
+      });
     }
 
     const { error } = await supabase
@@ -919,12 +918,10 @@ app.post("/api/customers/update-profile", async (req, res) => {
       // Bắt lỗi Unique Constraint từ PostgreSQL (23505)
       if (error.code === "23505") {
         if (error.details?.includes("phone")) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Số điện thoại đã tồn tại, vui lòng nhập số điện thoại khác.",
-            });
+          return res.status(400).json({
+            error:
+              "Số điện thoại đã tồn tại, vui lòng nhập số điện thoại khác.",
+          });
         }
         if (error.details?.includes("email")) {
           return res
