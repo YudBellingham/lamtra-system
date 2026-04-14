@@ -191,53 +191,44 @@ app.post("/api/chat", async (req, res) => {
         `\n🔨 Groq yêu cầu gọi ${choice.message.tool_calls.length} tools`,
       );
 
+      // ⚠️ CRITICAL STEP 1: PUSH assistant message (nguyên gốc từ Groq) vào apiMessages
+      // Điều này BẮTBUỘC trước khi push tool results
+      apiMessages.push(choice.message);
+      console.log("   ✅ Pushed assistant message with tool_calls");
+
       // ========== VÒNG 2: Thực thi tools ==========
       const toolResults = await processFunctionCalls(
         choice.message.tool_calls,
         customerid,
       );
 
-      // ========== VÒNG 3: Gửi tool results lại cho Groq ==========
-      console.log("\n🧠 Vòng 3: Gửi tool results lại đến Groq...");
+      // ========== VÒNG 3: PUSH tool results vào apiMessages ==========
+      console.log("\n🧠 Vòng 3: Push tool results vào messages...");
 
-      // BƯỚC QUAN TRỌNG: Ghép messages theo đúng sequence chuẩn OpenAI/Groq
-      // 1. System message
-      // 2. Original conversation messages
-      // 3. [REQUIRED] Assistant message với tool_calls - PHẢI ĐẶT TRƯỚC tool messages
-      // 4. Tool result messages (mỗi tool_call_id phải match với tool_calls ở bước 3)
-
-      const assistantMessage = {
-        role: "assistant",
-        content: choice.message.content || null, // Để null nếu không có content
-        tool_calls: choice.message.tool_calls, // QUAN TRỌNG: Phải có tool_calls
-      };
-
-      const toolMessages = toolResults.map((tr) => {
-        // Ensure content is always a string
-        const resultContent =
-          typeof tr.result === "string" ? tr.result : JSON.stringify(tr.result);
-        return {
+      // STEP 2: Push từng tool result vào apiMessages (ngay sau assistant message)
+      for (const tr of toolResults) {
+        const toolMessage = {
           role: "tool",
-          tool_call_id: tr.tool_call_id, // PHẢI match với tool_calls[i].id
-          content: resultContent, // PHẢI IS string
+          tool_call_id: tr.tool_call_id,
+          content:
+            typeof tr.result === "string"
+              ? tr.result
+              : JSON.stringify(tr.result),
         };
-      });
+        apiMessages.push(toolMessage);
+        console.log(`   ✅ Pushed tool result: ${tr.tool_call_id}`);
+      }
 
-      // Reconstruct messages: system + original messages + assistant message + tool results
-      const updatedMessages = [
-        { role: "system", content: SYSTEM_INSTRUCTION },
-        ...messages, // Original user/assistant messages
-        assistantMessage, // [CRITICAL] Assistant message với tool_calls MUST đứng trước tool messages
-        ...toolMessages, // Tool result messages
-      ];
-
-      // Log for debugging
+      // Log sequence for debugging
       console.log(
-        `   📍 Message sequence: system → user_msgs → assistant_toolcalls → ${toolMessages.length} tool_results`,
+        `   📍 Final message sequence: system + original msgs + assistant_toolcalls + ${toolResults.length} tool_results`,
       );
 
+      // ========== VÒNG 3: Gửi apiMessages (đã update) lại cho Groq ==========
+      console.log("   🔄 Gửi API call lần 2 đến Groq...");
+
       const response2 = await groq.chat.completions.create({
-        messages: updatedMessages,
+        messages: apiMessages, // Sử dụng mảng đã được update
         model: "llama-3.3-70b-versatile",
         temperature: 0.5,
         max_tokens: 800,
