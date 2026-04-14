@@ -3,6 +3,7 @@ import "./App.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import Chatbot from "./components/Chatbot/Chatbot";
+import ZaloWidget from "./components/ThirdPartyWidget/ThirdPartyWidget";
 import PageBackground from "./components/PageBackground/PageBackground";
 import HomePage from "./pages/HomePage/HomePage";
 import VeLamtra from "./pages/VeLamTra/VeLamtra";
@@ -22,7 +23,7 @@ import OrderTracking from "./pages/OrderTracking/OrderTracking";
 import { supabase } from "./lib/supabase";
 import { useEffect, useState } from "react";
 import { CartProvider } from "./context/CartContext";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 type PageType =
   | "home"
@@ -96,6 +97,7 @@ function AppContent() {
       </main>
       <Footer />
       <Chatbot />
+      <ZaloWidget />
     </div>
   );
 }
@@ -105,32 +107,48 @@ function App() {
 
   useEffect(() => {
     const checkCustomerData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data } = await supabase.from('customers').select('*').eq('authid', session.user.id).maybeSingle();
+        const { data } = await supabase
+          .from("customers")
+          .select("*")
+          .eq("authid", session.user.id)
+          .maybeSingle();
         if (data) {
-           setCustomerInfo(data);
+          setCustomerInfo(data);
         }
       }
     };
     checkCustomerData();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          checkCustomerData();
-       } else if (event === 'SIGNED_OUT') {
-          setCustomerInfo(null);
-       }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        checkCustomerData();
+      } else if (event === "SIGNED_OUT") {
+        setCustomerInfo(null);
+      }
     });
 
     return () => {
       authListener.subscription.unsubscribe();
-    }
+    };
   }, []);
 
   return (
     <CartProvider>
-      <Toaster position="bottom-right" toastOptions={{ style: { fontFamily: 'Quicksand, sans-serif', fontWeight: 600, color: '#d81b60', borderRadius: '12px' } }} />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            fontFamily: "Quicksand, sans-serif",
+            fontWeight: 600,
+            color: "#d81b60",
+            borderRadius: "12px",
+          },
+        }}
+      />
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
