@@ -11,14 +11,39 @@
 }
 
 /* ============================================
-   ZALO WIDGET POSITIONING
-   Force Zalo bubble to position next to Chatbot
+   ZALO WIDGET POSITIONING - RESPONSIVE
+   Adjusts based on screen size for all devices
    ============================================ */
+
+/* Desktop (1024px and above) - Position next to Chatbot */
 .zalo-chat-widget {
   position: fixed !important;
   bottom: 30px !important;
   right: 100px !important;
   z-index: 9999 !important;
+}
+
+/* Tablet (768px - 1023px) - Adjust positioning */
+@media (max-width: 1023px) {
+  .zalo-chat-widget {
+    right: 80px !important;
+  }
+}
+
+/* Mobile Large (480px - 767px) - Stack on left side to avoid Chatbot overlap */
+@media (max-width: 767px) {
+  .zalo-chat-widget {
+    left: 30px !important;
+    right: auto !important;
+  }
+}
+
+/* Mobile Small (below 480px) - Further adjust for very small screens */
+@media (max-width: 479px) {
+  .zalo-chat-widget {
+    left: 20px !important;
+    bottom: 100px !important;
+  }
 }
 
 .zalo-widget-container,
