@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
-import { FiHeart, FiSend, FiMessageCircle } from 'react-icons/fi';
-import toast from 'react-hot-toast';
-import BackgroundDecor from '../../components/PageBackground/BackgroundDecor';
-import './styles/Feedbacks.css';
+import React, { useState, useEffect, useRef } from "react";
+import { supabase } from "../../lib/supabase";
+import { FiHeart, FiSend, FiMessageCircle } from "react-icons/fi";
+import toast from "react-hot-toast";
+import BackgroundDecor from "../../components/PageBackground/BackgroundDecor";
+import "./styles/Feedbacks.css";
 
 const FeedbackCard = ({ fb }: { fb: any }) => {
   const [expanded, setExpanded] = useState(false);
@@ -20,19 +20,32 @@ const FeedbackCard = ({ fb }: { fb: any }) => {
 
   return (
     <div className="fb-note-card">
-      <div className="fb-quote-icon"><FiMessageCircle /></div>
-      <p className={`fb-content ${expanded ? 'expanded' : ''}`} ref={contentRef}>"{fb.content}"</p>
+      <div className="fb-quote-icon">
+        <FiMessageCircle />
+      </div>
+      <p
+        className={`fb-content ${expanded ? "expanded" : ""}`}
+        ref={contentRef}
+      >
+        "{fb.content}"
+      </p>
 
       {isOverflowing && !expanded && (
-        <button onClick={() => setExpanded(true)} className="fb-read-more">Xem thêm</button>
+        <button onClick={() => setExpanded(true)} className="fb-read-more">
+          Xem thêm
+        </button>
       )}
       {expanded && (
-        <button onClick={() => setExpanded(false)} className="fb-read-more">Thu gọn</button>
+        <button onClick={() => setExpanded(false)} className="fb-read-more">
+          Thu gọn
+        </button>
       )}
 
       <div className="fb-meta">
         <span className="fb-author">- {fb.displayname}</span>
-        <span className="fb-date">{new Date(fb.createdat).toLocaleDateString('vi-VN')}</span>
+        <span className="fb-date">
+          {new Date(fb.createdat).toLocaleDateString("vi-VN")}
+        </span>
       </div>
     </div>
   );
@@ -42,15 +55,15 @@ const Feedbacks: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ displayname: '', content: '' });
+  const [formData, setFormData] = useState({ displayname: "", content: "" });
 
   const fetchFeedbacks = async () => {
     try {
       const { data, error } = await supabase
-        .from('feedbacks')
-        .select('*')
-        .eq('is_visible', true)
-        .order('createdat', { ascending: false });
+        .from("feedbacks")
+        .select("*")
+        .eq("is_visible", true)
+        .order("createdat", { ascending: false });
 
       if (error) throw error;
       setFeedbacks(data || []);
@@ -72,25 +85,29 @@ const Feedbacks: React.FC = () => {
     setSubmitting(true);
     try {
       let customerid = null;
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         customerid = session.user.id;
       }
 
-      const { error } = await supabase.from('feedbacks').insert({
+      const { error } = await supabase.from("feedbacks").insert({
         customerid,
         displayname: formData.displayname,
         content: formData.content,
-        is_visible: true
+        is_visible: false,
       });
 
       if (error) throw error;
 
-      toast.success('Gửi yêu thương thành công! Cảm ơn bạn rất nhiều 💌');
-      setFormData({ displayname: '', content: '' });
+      toast.success(
+        "Gửi yêu thương thành công! Cảm ơn bạn rất nhiều 💌 Quản trị viên sẽ duyệt trong thời gian sớm nhất",
+      );
+      setFormData({ displayname: "", content: "" });
       fetchFeedbacks(); // Auto reload immediately
     } catch (e: any) {
-      toast.error('Gửi thất bại: ' + e.message);
+      toast.error("Gửi thất bại: " + e.message);
     } finally {
       setSubmitting(false);
     }
@@ -103,8 +120,22 @@ const Feedbacks: React.FC = () => {
         {/* Left Side: Form */}
         <section className="feedbacks-form-section">
           <div className="fb-form-card">
-            <h1 className="fb-title">Góc Nhỏ Tâm Tình <FiHeart style={{ color: '#d81b60', fill: '#d81b60', display: 'inline-block', verticalAlign: 'middle', marginLeft: '8px' }} /></h1>
-            <p className="fb-desc">Nơi Lam Trà lắng nghe những yêu thương và góp ý từ bạn để ngày một hoàn thiện hơn...</p>
+            <h1 className="fb-title">
+              Góc Nhỏ Tâm Tình{" "}
+              <FiHeart
+                style={{
+                  color: "#d81b60",
+                  fill: "#d81b60",
+                  display: "inline-block",
+                  verticalAlign: "middle",
+                  marginLeft: "8px",
+                }}
+              />
+            </h1>
+            <p className="fb-desc">
+              Nơi Lam Trà lắng nghe những yêu thương và góp ý từ bạn để ngày một
+              hoàn thiện hơn...
+            </p>
 
             <form onSubmit={handleSubmit} className="fb-form">
               <div className="fb-input-group">
@@ -115,7 +146,9 @@ const Feedbacks: React.FC = () => {
                   maxLength={50}
                   placeholder="VD: Lam Trà Lover"
                   value={formData.displayname}
-                  onChange={e => setFormData({ ...formData, displayname: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, displayname: e.target.value })
+                  }
                 />
               </div>
               <div className="fb-input-group">
@@ -125,11 +158,23 @@ const Feedbacks: React.FC = () => {
                   rows={5}
                   placeholder="Hôm nay đồ uống thế nào? Bạn có góp ý gì không?"
                   value={formData.content}
-                  onChange={e => setFormData({ ...formData, content: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, content: e.target.value })
+                  }
                 />
               </div>
-              <button type="submit" className="fb-submit-btn" disabled={submitting}>
-                {submitting ? 'Đang gửi...' : <><FiSend /> Gửi yêu thương</>}
+              <button
+                type="submit"
+                className="fb-submit-btn"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  "Đang gửi..."
+                ) : (
+                  <>
+                    <FiSend /> Gửi yêu thương
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -139,14 +184,23 @@ const Feedbacks: React.FC = () => {
         <section className="feedbacks-list-section">
           {loading ? (
             <div className="fb-loader">
-              <div className="spinner" style={{ borderColor: '#ffeff3', borderTopColor: '#ff8fa3', margin: '0 auto 10px auto' }}></div>
+              <div
+                className="spinner"
+                style={{
+                  borderColor: "#ffeff3",
+                  borderTopColor: "#ff8fa3",
+                  margin: "0 auto 10px auto",
+                }}
+              ></div>
               Đang tải góc nhỏ tâm tình...
             </div>
           ) : feedbacks.length === 0 ? (
-            <div className="fb-empty">Chưa có lời tâm tình nào. Hãy là người đầu tiên bóc tem nhé!</div>
+            <div className="fb-empty">
+              Chưa có lời tâm tình nào. Hãy là người đầu tiên bóc tem nhé!
+            </div>
           ) : (
             <div className="fb-masonry">
-              {feedbacks?.map(fb => (
+              {feedbacks?.map((fb) => (
                 <FeedbackCard key={fb.id} fb={fb} />
               ))}
             </div>
