@@ -4,12 +4,14 @@ import { supabase } from "../../lib/supabase";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import { FiChevronLeft } from "react-icons/fi";
 import axios from "axios";
+import ErrorPopup from "../../components/Common/ErrorPopup";
 import "./styles/Auth.css";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const navigate = useNavigate();
 
@@ -136,6 +138,18 @@ const Auth = () => {
     setErrorMsg("");
     setSuccessMsg("");
 
+    if (birthday) {
+      const birthDate = new Date(birthday);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (birthDate > today) {
+        setErrorMsg("Ngày sinh không thể là một ngày trong tương lai.");
+        setShowErrorPopup(true);
+        setLoading(false);
+        return;
+      }
+    }
+
     const emailRegex =
       /^[a-zA-Z0-9._%+-]+@(?!(gmai|yaho|hotmai)\.com$)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(regEmail)) {
@@ -182,12 +196,6 @@ const Auth = () => {
       }
     } catch (err) {
       console.error("Lỗi check existence:", err);
-    }
-
-    if (!birthday) {
-      setErrorMsg("Vui lòng chọn ngày sinh.");
-      setLoading(false);
-      return;
     }
 
     sessionStorage.setItem("isRegistering", "true");
@@ -463,6 +471,7 @@ const Auth = () => {
                     type="date"
                     required
                     value={birthday}
+                    max={new Date().toISOString().split("T")[0]}
                     onChange={(e) => setBirthday(e.target.value)}
                   />
                 </div>
@@ -481,7 +490,7 @@ const Auth = () => {
               </div>
             </div>
 
-            {errorMsg && !isLogin && (
+            {errorMsg && !isLogin && !showErrorPopup && (
               <div
                 className="error-text"
                 style={{
@@ -615,30 +624,35 @@ const Auth = () => {
 
         {/* Overlay Container (Sliding door) */}
         <div className="overlay-container">
-          <button
-            className={`overlay-trigger ${isLogin ? "active" : ""}`}
-            onClick={() => {
-              setIsLogin(false);
-              setErrorMsg("");
-              setSuccessMsg("");
-            }}
-            type="button"
-          >
-            ĐĂNG KÝ
-          </button>
-          <button
-            className={`overlay-trigger ${!isLogin ? "active" : ""}`}
-            onClick={() => {
-              setIsLogin(true);
-              setErrorMsg("");
-              setSuccessMsg("");
-            }}
-            type="button"
-          >
-            ĐĂNG NHẬP
-          </button>
+          <div className="overlay">
+            <div className="overlay-panel overlay-left">
+              <h1 className="overlay-title">Tạo Tài Khoản</h1>
+              <p className="overlay-text">
+                Đăng ký để nhận nhiều ưu đãi hấp dẫn từ Lam Trà bạn nhé!
+              </p>
+              <button className="ghost-btn" onClick={() => setIsLogin(false)}>
+                Đăng Ký
+              </button>
+            </div>
+            <div className="overlay-panel overlay-right">
+              <h1 className="overlay-title">Chào mừng trở lại!</h1>
+              <p className="overlay-text">
+                Đăng nhập để theo dõi đơn hàng và nhận nhiều ưu đãi hấp dẫn từ
+                Lam Trà bạn nhé!
+              </p>
+              <button className="ghost-btn" onClick={() => setIsLogin(true)}>
+                Đăng Nhập
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+      {showErrorPopup && (
+        <ErrorPopup
+          message={errorMsg}
+          onClose={() => setShowErrorPopup(false)}
+        />
+      )}
     </div>
   );
 };
