@@ -191,6 +191,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.post("/api/auth/check-existence", async (req, res) => {
+  const { email, phone } = req.body;
+  try {
+    const { data: emailData, error: emailError } = await supabase
+      .from("customers")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    const { data: phoneData, error: phoneError } = await supabase
+      .from("customers")
+      .select("phone")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (emailError || phoneError) {
+      throw emailError || phoneError;
+    }
+
+    res.json({
+      emailExists: !!emailData,
+      phoneExists: !!phoneData,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi kiểm tra thông tin." });
+  }
+});
+
 // ==================== RESEND EMAIL SERVICE (Optional) ====================
 // Chỉ initialize nếu có RESEND_API_KEY
 const { Resend } = require("resend");
@@ -861,26 +889,30 @@ app.post("/api/orders/reorder", async (req, res) => {
 
 // 1. Kiểm tra tồn tại Email/SĐT (Dùng cho Đăng ký)
 app.post("/api/auth/check-existence", async (req, res) => {
+  const { email, phone } = req.body;
   try {
-    const { email, phone } = req.body;
-
-    const { data: emailData } = await supabase
+    const { data: emailData, error: emailError } = await supabase
       .from("customers")
       .select("email")
       .eq("email", email)
       .maybeSingle();
-    const { data: phoneData } = await supabase
+
+    const { data: phoneData, error: phoneError } = await supabase
       .from("customers")
       .select("phone")
       .eq("phone", phone)
       .maybeSingle();
 
+    if (emailError || phoneError) {
+      throw emailError || phoneError;
+    }
+
     res.json({
       emailExists: !!emailData,
       phoneExists: !!phoneData,
     });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi kiểm tra thông tin." });
   }
 });
 
