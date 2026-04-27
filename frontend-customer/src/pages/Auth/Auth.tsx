@@ -626,20 +626,11 @@ const Auth = () => {
         <div className="overlay-container">
           <div className="overlay">
             <div className="overlay-panel overlay-left">
-              <h1 className="overlay-title">Tạo Tài Khoản</h1>
-              <p className="overlay-text">
-                Đăng ký để nhận nhiều ưu đãi hấp dẫn từ Lam Trà bạn nhé!
-              </p>
               <button className="ghost-btn" onClick={() => setIsLogin(false)}>
                 Đăng Ký
               </button>
             </div>
             <div className="overlay-panel overlay-right">
-              <h1 className="overlay-title">Chào mừng trở lại!</h1>
-              <p className="overlay-text">
-                Đăng nhập để theo dõi đơn hàng và nhận nhiều ưu đãi hấp dẫn từ
-                Lam Trà bạn nhé!
-              </p>
               <button className="ghost-btn" onClick={() => setIsLogin(true)}>
                 Đăng Nhập
               </button>
