@@ -626,13 +626,13 @@ const Auth = () => {
         <div className="overlay-container">
           <div className="overlay">
             <div className="overlay-panel overlay-left">
-              <button className="ghost-btn" onClick={() => setIsLogin(false)}>
-                Đăng Ký
+              <button className="ghost-btn" onClick={() => setIsLogin(true)}>
+                Đăng Nhập
               </button>
             </div>
             <div className="overlay-panel overlay-right">
-              <button className="ghost-btn" onClick={() => setIsLogin(true)}>
-                Đăng Nhập
+              <button className="ghost-btn" onClick={() => setIsLogin(false)}>
+                Đăng Ký
               </button>
             </div>
           </div>

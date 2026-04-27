@@ -253,13 +253,13 @@
 
 .sign-in-container {
   left: 0;
-  width: 90%;
+  width: 100%;
   z-index: 2;
   opacity: 1;
 }
 
 .auth-container.right-panel-active .sign-in-container {
-  left: 10%;
+  left: 0;
   opacity: 0;
   z-index: 1;
   pointer-events: none;
@@ -267,14 +267,14 @@
 
 .sign-up-container {
   left: 0;
-  width: 90%;
+  width: 100%;
   opacity: 0;
   z-index: 1;
   pointer-events: none;
 }
 
 .auth-container.right-panel-active .sign-up-container {
-  left: 10%;
+  left: 0;
   opacity: 1;
   z-index: 5;
   pointer-events: auto;
@@ -283,20 +283,16 @@
 .overlay-container {
   position: absolute;
   top: 0;
-  left: 90%;
-  width: 10%;
+  left: calc(100% - 100px);
+  width: 100px;
   height: 100%;
   overflow: hidden;
-  background: linear-gradient(135deg, #f7a9bf 0%, #f06292 100%);
-  transition: left 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 1000;
+  transition: transform 0.6s ease-in-out;
 }
 
 .auth-container.right-panel-active .overlay-container {
-  left: 0%;
+  transform: translateX(-800px);
 }
 
 .overlay-trigger {
@@ -338,45 +334,38 @@
 }
 
 .overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  position: relative;
+  left: -100%;
+  width: 200%;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  background: #e91e63;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+}
+
+.auth-container.right-panel-active .overlay {
+  transform: translateX(50%);
 }
 
 .overlay-panel {
   position: absolute;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  width: 50%;
   height: 100%;
-  width: 100%;
-  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-  z-index: 10;
-  background: linear-gradient(135deg, #f7a9bf 0%, #f06292 100%);
+  padding: 0;
 }
 
 .overlay-left {
   left: 0;
-  transform: translateX(-100%);
-}
-
-.overlay-right {
-  left: 0;
-  transform: translateX(100%);
-}
-
-.auth-container.right-panel-active .overlay-left {
   transform: translateX(0);
 }
 
-.auth-container.right-panel-active .overlay-right {
+.overlay-right {
+  right: 0;
   transform: translateX(0);
 }
 
@@ -399,30 +388,39 @@
 }
 
 .ghost-btn {
-  border-radius: 30px;
-  border: 2px solid white;
   background-color: transparent;
+  border: none;
   color: white;
-  font-family: "Be Vietnam Pro", sans-serif;
-  font-size: 15px;
-  font-weight: 800;
-  padding: 12px 45px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
+  padding: 12px 8px;
+  font-size: 18px;
+  font-weight: bold;
   cursor: pointer;
+  white-space: pre-line;
+  z-index: 10;
+  border-radius: 0;
+  transition: background-color 0.3s ease;
+  font-family: "Be Vietnam Pro", sans-serif;
+  text-transform: uppercase;
   outline: none;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 2px;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
 }
 
 .ghost-btn:hover {
-  background-color: white;
-  color: #f06292;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: none;
 }
 
 .ghost-btn:active {
-  transform: translateY(0);
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .social-container {
