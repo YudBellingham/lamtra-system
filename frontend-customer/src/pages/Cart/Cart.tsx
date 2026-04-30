@@ -546,7 +546,7 @@ const Cart: React.FC = () => {
         if (formData.paymentMethod === "COD") {
           toast.success("Đặt hàng thành công!");
           clearCart();
-          navigate(`/order/${orderId}`);
+          navigate(`/payment-result?orderId=${orderId}`);
         } else {
           const vnpRes = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/create_payment_url`,
