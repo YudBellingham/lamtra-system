@@ -1033,9 +1033,9 @@ const Cart: React.FC = () => {
                           selectedDeliveryBranchId === b.branch.branchid
                             ? "selected"
                             : ""
-                        } ${!b.capability.available ? "disabled" : ""} ${isAutoRouting ? "disabled" : ""}`}
+                        } ${!b.capability.available ? "disabled" : ""}`}
                         onClick={() => {
-                          if (b.capability.available && !isAutoRouting) {
+                          if (b.capability.available) {
                             setSelectedDeliveryBranchId(b.branch.branchid);
                             setIsAutoRouting(false);
                             setShippingFee(b.shippingFee);
@@ -1043,8 +1043,10 @@ const Cart: React.FC = () => {
                           }
                         }}
                         style={{
-                          opacity: isAutoRouting ? 0.5 : 1,
-                          cursor: isAutoRouting ? "not-allowed" : "pointer",
+                          opacity: !b.capability.available ? 0.3 : 1,
+                          cursor: !b.capability.available
+                            ? "not-allowed"
+                            : "pointer",
                         }}
                       >
                         <div className="branch-info">
