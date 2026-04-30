@@ -1107,20 +1107,33 @@ const Cart: React.FC = () => {
                         <span className="branch-status-available">
                           Hệ thống sẽ chọn chi nhánh tốt nhất
                         </span>
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "#999",
+                            marginTop: "6px",
+                            marginBottom: 0,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          💡 Sau khi đơn hàng được hệ thống đẩy đi, bạn có thể
+                          kiểm tra phí ship ở chi tiết đơn hàng nhé
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="auto-select-container">
-                    <button
-                      type="button"
-                      onClick={handleAutoSelectBranch}
-                      className="auto-select-btn"
-                      disabled={isAutoRouting}
-                    >
-                      <FiZap style={{ marginRight: "8px" }} />
-                      Tự động chọn chi nhánh tốt nhất
-                    </button>
+                    {!isAutoRouting && (
+                      <button
+                        type="button"
+                        onClick={handleAutoSelectBranch}
+                        className="auto-select-btn"
+                      >
+                        <FiZap style={{ marginRight: "8px" }} />
+                        Tự động chọn chi nhánh tốt nhất
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
