@@ -24,6 +24,7 @@ interface Product {
   categoryid: number;
   label?: string;
   has_size_l?: boolean;
+  status?: string;
 }
 
 const SanPham: React.FC = () => {
@@ -31,12 +32,18 @@ const SanPham: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<number | string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<number | string>(
+    "all",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const removeAccents = (str: string) => {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s/g, '');
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s/g, "");
   };
 
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
@@ -58,9 +65,11 @@ const SanPham: React.FC = () => {
   };
 
   const handleLabelToggle = (label: string) => {
-    setFilterLabels(prev => {
+    setFilterLabels((prev) => {
       const current = prev || [];
-      return current.includes(label) ? current.filter(l => l !== label) : [...current, label];
+      return current.includes(label)
+        ? current.filter((l) => l !== label)
+        : [...current, label];
     });
     setCurrentPage(1);
   };
@@ -70,7 +79,11 @@ const SanPham: React.FC = () => {
       try {
         const [catRes, prodRes] = await Promise.all([
           supabase.from("categories").select("*"),
-          supabase.from("products").select("productid, name, subtitle, description, baseprice, saleprice, imageurl, categoryid, label, has_size_l")
+          supabase
+            .from("products")
+            .select(
+              "productid, name, subtitle, description, baseprice, saleprice, imageurl, categoryid, label, has_size_l, status",
+            ),
         ]);
 
         if (catRes.error) throw catRes.error;
@@ -91,36 +104,47 @@ const SanPham: React.FC = () => {
 
   const fetchFavorites = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/customers/favorites`, {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/customers/favorites`,
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
       setFavProductIds(res.data.products?.map((p: any) => p.productid) || []);
     } catch (err) {
       console.error("Lỗi fetch favorites:", err);
     }
   };
 
-  const handleToggleFavorite = async (e: React.MouseEvent, productId: number) => {
+  const handleToggleFavorite = async (
+    e: React.MouseEvent,
+    productId: number,
+  ) => {
     e.stopPropagation();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Vui lòng đăng nhập để thả tim món ăn!");
-        navigate('/auth');
+        navigate("/auth");
         return;
       }
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/favorites/toggle`,
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/favorites/toggle`,
         { productId },
-        { headers: { Authorization: `Bearer ${session.access_token}` } }
+        { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (res.data.success) {
         if (res.data.isFavorite) {
           setFavProductIds([...favProductIds, productId]);
           toast.success("Đã thêm vào yêu thích!");
         } else {
-          setFavProductIds(favProductIds?.filter(id => id !== productId));
+          setFavProductIds(favProductIds?.filter((id) => id !== productId));
           toast("Đã bỏ yêu thích");
         }
       }
@@ -130,23 +154,31 @@ const SanPham: React.FC = () => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
-  let result = selectedCategory === "all"
-    ? (products || [])
-    : (products || [])?.filter(p => p.categoryid === selectedCategory);
+  let result =
+    selectedCategory === "all"
+      ? products || []
+      : (products || [])?.filter((p) => p.categoryid === selectedCategory);
+
+  // Filter sản phẩm theo status - chỉ hiển thị "Đang bán"
+  result = (result || [])?.filter((p) => p.status === "Đang bán");
 
   if (searchQuery.trim() !== "") {
     const query = removeAccents(searchQuery);
-    result = result?.filter(p => removeAccents(p.name)?.includes(query));
+    result = result?.filter((p) => removeAccents(p.name)?.includes(query));
   }
 
   if (filterLabels.length > 0) {
-    result = (result || [])?.filter(p => p.label && (filterLabels || [])?.includes(p.label.toLowerCase()));
+    result = (result || [])?.filter(
+      (p) => p.label && (filterLabels || [])?.includes(p.label.toLowerCase()),
+    );
   }
 
-  result = result?.filter(p => p.baseprice >= minPrice && p.baseprice <= maxPrice);
+  result = result?.filter(
+    (p) => p.baseprice >= minPrice && p.baseprice <= maxPrice,
+  );
 
   if (sortType) {
     result = [...result].sort((a, b) => {
@@ -157,7 +189,10 @@ const SanPham: React.FC = () => {
   }
 
   const totalPages = Math.ceil(result.length / ITEMS_PER_PAGE);
-  const paginatedProducts = result.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedProducts = result.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
   return (
     <main className="menu-page">
@@ -175,7 +210,9 @@ const SanPham: React.FC = () => {
         {loading ? (
           <div className="menu-status shimmer-text">Đang tải thực đơn...</div>
         ) : error ? (
-          <div className="menu-status error-status">Lỗi kết nối database: {error}</div>
+          <div className="menu-status error-status">
+            Lỗi kết nối database: {error}
+          </div>
         ) : (
           <>
             <div className="category-scroll-wrapper">
@@ -186,7 +223,7 @@ const SanPham: React.FC = () => {
                 >
                   Tất cả
                 </button>
-                {categories?.map(cat => (
+                {categories?.map((cat) => (
                   <button
                     key={cat.categoryid}
                     className={`category-pill ${selectedCategory === cat.categoryid ? "active" : ""}`}
@@ -198,23 +235,47 @@ const SanPham: React.FC = () => {
               </div>
             </div>
 
-            <div className="product-search-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', padding: '0 20px' }}>
+            <div
+              className="product-search-wrapper"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "20px",
+                padding: "0 20px",
+              }}
+            >
               <input
                 type="text"
                 placeholder="Tìm trái cây, trà xanh, matcha..."
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                style={{ width: '100%', maxWidth: '500px', padding: '12px 20px', borderRadius: '30px', border: '1px solid #ffccd5', fontSize: '15px', outline: 'none', fontFamily: 'Quicksand', boxShadow: '0 4px 12px rgba(216, 27, 96, 0.05)' }}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  width: "100%",
+                  maxWidth: "500px",
+                  padding: "12px 20px",
+                  borderRadius: "30px",
+                  border: "1px solid #ffccd5",
+                  fontSize: "15px",
+                  outline: "none",
+                  fontFamily: "Quicksand",
+                  boxShadow: "0 4px 12px rgba(216, 27, 96, 0.05)",
+                }}
               />
             </div>
 
             <div className="advanced-filter-wrapper">
               <button
-                className={`filter-toggle-btn ${showAdvancedFilter ? 'active' : ''}`}
+                className={`filter-toggle-btn ${showAdvancedFilter ? "active" : ""}`}
                 onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
               >
                 <FaFilter /> Bộ Lọc Nâng Cao
-                {(filterLabels.length > 0 || sortType || minPrice > 0 || maxPrice < 150000) && <span className="filter-dot"></span>}
+                {(filterLabels.length > 0 ||
+                  sortType ||
+                  minPrice > 0 ||
+                  maxPrice < 150000) && <span className="filter-dot"></span>}
               </button>
 
               {showAdvancedFilter && (
@@ -226,14 +287,16 @@ const SanPham: React.FC = () => {
                         type="checkbox"
                         checked={filterLabels?.includes("bestseller")}
                         onChange={() => handleLabelToggle("bestseller")}
-                      /> Sản phẩm bán chạy
+                      />{" "}
+                      Sản phẩm bán chạy
                     </label>
                     <label className="checkbox-label">
                       <input
                         type="checkbox"
                         checked={filterLabels?.includes("new")}
                         onChange={() => handleLabelToggle("new")}
-                      /> Sản phẩm mới
+                      />{" "}
+                      Sản phẩm mới
                     </label>
                   </div>
 
@@ -242,7 +305,10 @@ const SanPham: React.FC = () => {
                     <select
                       className="filter-select"
                       value={sortType}
-                      onChange={(e) => { setSortType(e.target.value); setCurrentPage(1); }}
+                      onChange={(e) => {
+                        setSortType(e.target.value);
+                        setCurrentPage(1);
+                      }}
                     >
                       <option value="">Không sắp xếp</option>
                       <option value="asc">Giá tăng dần</option>
@@ -258,7 +324,7 @@ const SanPham: React.FC = () => {
                         className="slider-track"
                         style={{
                           left: `${(minPrice / 150000) * 100}%`,
-                          right: `${100 - (maxPrice / 150000) * 100}%`
+                          right: `${100 - (maxPrice / 150000) * 100}%`,
                         }}
                       ></div>
                       <input
@@ -268,7 +334,10 @@ const SanPham: React.FC = () => {
                         step="5000"
                         value={minPrice}
                         onChange={(e) => {
-                          const val = Math.min(Number(e.target.value), maxPrice - 5000);
+                          const val = Math.min(
+                            Number(e.target.value),
+                            maxPrice - 5000,
+                          );
                           setMinPrice(val);
                           setCurrentPage(1);
                         }}
@@ -280,20 +349,25 @@ const SanPham: React.FC = () => {
                         step="5000"
                         value={maxPrice}
                         onChange={(e) => {
-                          const val = Math.max(Number(e.target.value), minPrice + 5000);
+                          const val = Math.max(
+                            Number(e.target.value),
+                            minPrice + 5000,
+                          );
                           setMaxPrice(val);
                           setCurrentPage(1);
                         }}
                       />
                     </div>
-                    <div className="price-display">Từ {formatPrice(minPrice)} - {formatPrice(maxPrice)}</div>
+                    <div className="price-display">
+                      Từ {formatPrice(minPrice)} - {formatPrice(maxPrice)}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             <div className="product-grid">
-              {paginatedProducts?.map(product => (
+              {paginatedProducts?.map((product) => (
                 <div
                   key={product.productid}
                   className="product-card"
@@ -301,54 +375,99 @@ const SanPham: React.FC = () => {
                 >
                   <div className="product-image-wrapper">
                     {product.label && (
-                      <span className={`product-badge ${product.label.toLowerCase()}`}>
+                      <span
+                        className={`product-badge ${product.label.toLowerCase()}`}
+                      >
                         {product.label}
                       </span>
                     )}
                     {product.imageurl ? (
-                      <img src={product.imageurl} alt={product.name} className="product-image" />
+                      <img
+                        src={product.imageurl}
+                        alt={product.name}
+                        className="product-image"
+                      />
                     ) : (
                       <div className="product-image-fallback" />
                     )}
                     <button
-                      className={`fav-btn ${favProductIds?.includes(product.productid) ? 'active' : ''}`}
-                      onClick={(e) => handleToggleFavorite(e, product.productid)}
+                      className={`fav-btn ${favProductIds?.includes(product.productid) ? "active" : ""}`}
+                      onClick={(e) =>
+                        handleToggleFavorite(e, product.productid)
+                      }
                       style={{
-                        position: 'absolute', top: '10px', right: '10px',
-                        background: 'rgba(255,255,255,0.8)', border: 'none',
-                        borderRadius: '50%', width: '35px', height: '35px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: favProductIds?.includes(product.productid) ? '#d81b60' : '#bbb',
-                        cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 5
+                        position: "absolute",
+                        top: "10px",
+                        right: "10px",
+                        background: "rgba(255,255,255,0.8)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "35px",
+                        height: "35px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: favProductIds?.includes(product.productid)
+                          ? "#d81b60"
+                          : "#bbb",
+                        cursor: "pointer",
+                        transition:
+                          "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        zIndex: 5,
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.15)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                      <FiHeart fill={(favProductIds || [])?.includes(product.productid) ? '#d81b60' : 'none'} style={{ fontSize: '18px' }} />
+                      <FiHeart
+                        fill={
+                          (favProductIds || [])?.includes(product.productid)
+                            ? "#d81b60"
+                            : "none"
+                        }
+                        style={{ fontSize: "18px" }}
+                      />
                     </button>
                   </div>
                   <div className="product-info">
                     <h3 className="product-name">{product.name}</h3>
-                    <p className="product-desc">{product.subtitle || product.description}</p>
+                    <p className="product-desc">
+                      {product.subtitle || product.description}
+                    </p>
                     <div className="product-price">
-                      {product.saleprice && product.saleprice < product.baseprice ? (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ textDecoration: 'line-through', color: '#bbb', fontSize: '0.9em', fontWeight: 'normal' }}>
+                      {product.saleprice &&
+                      product.saleprice < product.baseprice ? (
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <span
+                            style={{
+                              textDecoration: "line-through",
+                              color: "#bbb",
+                              fontSize: "0.9em",
+                              fontWeight: "normal",
+                            }}
+                          >
                             {product.has_size_l
                               ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
                               : formatPrice(product.baseprice)}
                           </span>
-                          <span style={{ color: '#d81b60', fontWeight: 'bold' }}>
+                          <span
+                            style={{ color: "#d81b60", fontWeight: "bold" }}
+                          >
                             {product.has_size_l
                               ? `${formatPrice(product.saleprice)} - ${formatPrice(product.saleprice + 10000)}`
                               : formatPrice(product.saleprice)}
                           </span>
                         </div>
+                      ) : product.has_size_l ? (
+                        `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
                       ) : (
-                        product.has_size_l
-                          ? `${formatPrice(product.baseprice)} - ${formatPrice(product.baseprice + 10000)}`
-                          : formatPrice(product.baseprice)
+                        formatPrice(product.baseprice)
                       )}
                     </div>
                   </div>
@@ -357,7 +476,9 @@ const SanPham: React.FC = () => {
             </div>
 
             {result.length === 0 && (
-              <div className="menu-status empty-status">Không tìm thấy sản phẩm phù hợp.</div>
+              <div className="menu-status empty-status">
+                Không tìm thấy sản phẩm phù hợp.
+              </div>
             )}
 
             {totalPages > 1 && (

@@ -94,6 +94,7 @@ const Cart: React.FC = () => {
   const [selectedDeliveryBranchId, setSelectedDeliveryBranchId] = useState<
     number | string
   >("");
+  const [isAutoRouting, setIsAutoRouting] = useState(false);
 
   // Branches
   const [branches, setBranches] = useState<any[]>([]);
@@ -318,6 +319,7 @@ const Cart: React.FC = () => {
       setIsCalculatingShipping(true);
       setShippingError("");
       setFallbackLevelWarning("");
+      setIsAutoRouting(false); // Reset auto routing when recalculating
 
       if (!lat) {
         setShippingDistance(null);
@@ -471,7 +473,7 @@ const Cart: React.FC = () => {
       }
       if (!selectedDeliveryBranchId) {
         toast.error(
-          "Vui lòng chờ tính phí hoặc chọn chi nhánh giao hàng khả dụng.",
+          "Vui lòng chọn chi nhánh giao hàng hoặc cho hệ thống tự đẩy đơn.",
         );
         return;
       }
@@ -521,6 +523,7 @@ const Cart: React.FC = () => {
         paymentMethod: formData.paymentMethod,
         status: statusToSave,
         isDelivery: orderType === "Giao hàng",
+        isAutoRouting: isAutoRouting,
         orderNote: orderNote,
         customerInfo: {
           fullName: formData.fullName,
@@ -543,7 +546,7 @@ const Cart: React.FC = () => {
         if (formData.paymentMethod === "COD") {
           toast.success("Đặt hàng thành công!");
           clearCart();
-          navigate(`/order/${orderId}`);
+          navigate(`/payment-result?orderId=${orderId}`);
         } else {
           const vnpRes = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/create_payment_url`,
@@ -1034,9 +1037,16 @@ const Cart: React.FC = () => {
                         onClick={() => {
                           if (b.capability.available) {
                             setSelectedDeliveryBranchId(b.branch.branchid);
+                            setIsAutoRouting(false);
                             setShippingFee(b.shippingFee);
                             setShippingDistance(b.distance);
                           }
+                        }}
+                        style={{
+                          opacity: !b.capability.available ? 0.3 : 1,
+                          cursor: !b.capability.available
+                            ? "not-allowed"
+                            : "pointer",
                         }}
                       >
                         <div className="branch-info">
@@ -1048,7 +1058,8 @@ const Cart: React.FC = () => {
                           </p>
                           {!b.capability.available ? (
                             <span className="branch-status-unavailable">
-                              Hết hàng: {b.capability.outOfStockItems.join(", ")}
+                              Hết hàng:{" "}
+                              {b.capability.outOfStockItems.join(", ")}
                             </span>
                           ) : b.capability.isOverloaded ? (
                             <span className="branch-status-overload">
@@ -1065,175 +1076,65 @@ const Cart: React.FC = () => {
                         </p>
                       </div>
                     ))}
-                  </div>
-                  <div className="auto-select-container">
-                    <button
-                      type="button"
-                      onClick={handleAutoSelectBranch}
-                      className="auto-select-btn"
+                    <div
+                      key="auto-routing-option"
+                      className={`branch-item ${isAutoRouting ? "selected" : ""}`}
+                      onClick={() => {
+                        if (!isAutoRouting) {
+                          setIsAutoRouting(true);
+                          setSelectedDeliveryBranchId("auto-routing");
+                          setShippingFee(0);
+                          toast.success(
+                            "Để hệ thống tự động đẩy đơn đến chi nhánh phù hợp nhất!",
+                          );
+                        } else {
+                          setIsAutoRouting(false);
+                          setSelectedDeliveryBranchId("");
+                          toast("Đã hủy chế độ tự động routing.");
+                        }
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        backgroundColor: isAutoRouting ? "#ffebf3" : "#f9f9f9",
+                        borderColor: isAutoRouting ? "#d81b60" : "#ddd",
+                        borderWidth: isAutoRouting ? "2px" : "1px",
+                      }}
                     >
-                      <FiZap style={{ marginRight: "8px" }} />
-                      Tự động chọn chi nhánh tốt nhất
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="checkout-group" style={{ marginTop: "15px" }}>
-                <label>Ghi chú toàn đơn hàng</label>
-                <textarea
-                  placeholder="Ghi chú (Ví dụ: Gọi điện trước khi giao, giao giờ hành chính...)"
-                  rows={2}
-                  value={orderNote}
-                  onChange={(e) => setOrderNote(e.target.value)}
-                ></textarea>
-              </div>
-
-              <h2 className="checkout-heading" style={{ marginTop: "20px" }}>
-                Phương thức thanh toán
-              </h2>
-              <div className="payment-methods">
-                <label
-                  className={`payment-option ${formData.paymentMethod === "COD" ? "active" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    value="COD"
-                    checked={formData.paymentMethod === "COD"}
-                    onChange={() =>
-                      setFormData({ ...formData, paymentMethod: "COD" })
-                    }
-                  />
-                  <span>Thanh toán khi nhận hàng (COD)</span>
-                </label>
-                <label
-                  className={`payment-option ${formData.paymentMethod === "VNPAY" ? "active" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    value="VNPAY"
-                    checked={formData.paymentMethod === "VNPAY"}
-                    onChange={() =>
-                      setFormData({ ...formData, paymentMethod: "VNPAY" })
-                    }
-                  />
-                  <span>Ví VNPay / Thẻ ATM Trực tuyến</span>
-                </label>
-              </div>
-              
-              {orderType === "Giao hàng" && deliveryBranchesInfo.length > 0 && (
-                <div
-                  className="delivery-branch-options"
-                  style={{
-                    marginTop: "20px",
-                    padding: "15px",
-                    background: "#f8f9fa",
-                    borderRadius: "12px",
-                    border: "1px solid #eee",
-                  }}
-                >
-                  <h3
-                    style={{
-                      marginTop: 0,
-                      marginBottom: "15px",
-                      fontSize: "16px",
-                      color: "#333",
-                    }}
-                  >
-                    Tùy chọn chi nhánh phục vụ
-                  </h3>
-                  {deliveryBranchesInfo?.map((opt, index) => {
-                    const cap = opt.capability;
-                    const isSelected =
-                      selectedDeliveryBranchId === opt.branch.branchid;
-
-                    let tag = "";
-                    let tagColor = "";
-                    if (!cap.available) {
-                      tag = `Hết hàng (${cap.outOfStockItems.join(", ")})`;
-                      tagColor = "#f44336";
-                    } else if (cap.isOverloaded) {
-                      tag = `Quá tải (Đợi ${cap.estimatedTime})`;
-                      tagColor = "#ff9800";
-                    } else if (index === 0) {
-                      tag = "Gần nhất";
-                      tagColor = "#4caf50";
-                    }
-
-                    return (
-                      <div
-                        key={opt.branch.branchid}
-                        onClick={() => {
-                          if (cap.available) {
-                            setSelectedDeliveryBranchId(opt.branch.branchid);
-                            setShippingDistance(opt.distance);
-                            setShippingFee(opt.shippingFee);
-                          }
-                        }}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "12px",
-                          marginBottom: "10px",
-                          borderRadius: "8px",
-                          border: isSelected
-                            ? "2px solid #d81b60"
-                            : "1px solid #ddd",
-                          background: !cap.available
-                            ? "#f5f5f5"
-                            : isSelected
-                              ? "#fff0f4"
-                              : "#fff",
-                          cursor: cap.available ? "pointer" : "not-allowed",
-                          opacity: cap.available ? 1 : 0.6,
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              fontWeight: "bold",
-                              fontSize: "15px",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            {opt.branch.name}{" "}
-                            <span
-                              style={{
-                                fontSize: "12px",
-                                fontWeight: "normal",
-                                color: "#666",
-                              }}
-                            >
-                              ({opt.distance.toFixed(1)}km)
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <span
-                              style={{
-                                fontSize: "13px",
-                                background: tagColor,
-                                color: "#fff",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              {tag || "Còn hàng"}
-                            </span>
-                          </div>
-                        </div>
-                        <div
+                      <div className="branch-info">
+                        <p className="branch-name" style={{ color: "#d81b60" }}>
+                          Để hệ thống tự đẩy đơn
+                        </p>
+                        <span className="branch-status-available">
+                          Hệ thống sẽ chọn chi nhánh tốt nhất
+                        </span>
+                        <p
                           style={{
-                            textAlign: "right",
-                            fontWeight: "bold",
-                            color: cap.available ? "#d81b60" : "#999",
+                            fontSize: "12px",
+                            color: "#999",
+                            marginTop: "6px",
+                            marginBottom: 0,
+                            fontStyle: "italic",
                           }}
                         >
-                          {formatPrice(opt.shippingFee)} Ship
-                        </div>
+                          💡 Sau khi đơn hàng được hệ thống đẩy đi, bạn có thể
+                          kiểm tra phí ship ở chi tiết đơn hàng nhé
+                        </p>
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+
+                  <div className="auto-select-container">
+                    {!isAutoRouting && (
+                      <button
+                        type="button"
+                        onClick={handleAutoSelectBranch}
+                        className="auto-select-btn"
+                      >
+                        <FiZap style={{ marginRight: "8px" }} />
+                        Tự động chọn chi nhánh tốt nhất
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

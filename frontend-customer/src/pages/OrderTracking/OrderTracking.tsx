@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { FiChevronLeft, FiCheck } from 'react-icons/fi';
-import { FaStar } from 'react-icons/fa';
-import toast from 'react-hot-toast';
-import axios from 'axios';
-import { useCart } from '../../context/CartContext';
-import { useNavigate } from 'react-router-dom';
-import './styles/OrderTracking.css';
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FiChevronLeft, FiCheck } from "react-icons/fi";
+import { FaStar } from "react-icons/fa";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useCart } from "../../context/CartContext";
+import { useNavigate } from "react-router-dom";
+import "./styles/OrderTracking.css";
 
-const STEPS = ['Chờ xác nhận', 'Đang làm', 'Đang giao', 'Hoàn thành'];
+const STEPS = ["Chờ xác nhận", "Đang làm", "Đang giao", "Hoàn thành"];
 
 const OrderTracking: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,28 +32,31 @@ const OrderTracking: React.FC = () => {
       if (!id) return;
       try {
         const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('orderid', id)
+          .from("orders")
+          .select("*, branches(name, address)")
+          .eq("orderid", id)
           .single();
 
         if (orderError) throw orderError;
         setOrder(orderData);
 
         const { data: detailsData, error: detailsError } = await supabase
-          .from('orderdetails')
-          .select('*, products(name, imageurl)')
-          .eq('orderid', id);
+          .from("orderdetails")
+          .select("*, products(name, imageurl)")
+          .eq("orderid", id);
 
         if (detailsError) throw detailsError;
         setDetails(detailsData || []);
 
-        const { data: revData } = await supabase.from('reviews').select('reviewid').eq('orderid', id);
+        const { data: revData } = await supabase
+          .from("reviews")
+          .select("reviewid")
+          .eq("orderid", id);
         if (revData && revData.length > 0) {
           setHasReviewed(true);
         }
       } catch (error) {
-        toast.error('Không tìm thấy thông tin đơn hàng!');
+        toast.error("Không tìm thấy thông tin đơn hàng!");
       } finally {
         setLoading(false);
       }
@@ -63,10 +66,21 @@ const OrderTracking: React.FC = () => {
     // Subscribe to real-time changes
     const channel = supabase
       .channel(`public:orders:orderid=eq.${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `orderid=eq.${id}` }, payload => {
-        setOrder(payload.new);
-        toast.success(`Đơn hàng của bạn đã chuyển sang trạng thái: ${payload.new.status}`);
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `orderid=eq.${id}`,
+        },
+        (payload) => {
+          setOrder(payload.new);
+          toast.success(
+            `Đơn hàng của bạn đã chuyển sang trạng thái: ${payload.new.status}`,
+          );
+        },
+      )
       .subscribe();
 
     return () => {
@@ -76,36 +90,50 @@ const OrderTracking: React.FC = () => {
 
   const handleReceived = async () => {
     try {
-      const { error } = await supabase.from('orders').update({ status: 'Hoàn thành' }).eq('orderid', id);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "Hoàn thành" })
+        .eq("orderid", id);
       if (error) throw error;
-      setOrder({ ...order, status: 'Hoàn thành' });
-      toast.success('Cảm ơn bạn đã xác nhận nhận hàng!');
+      setOrder({ ...order, status: "Hoàn thành" });
+      toast.success("Cảm ơn bạn đã xác nhận nhận hàng!");
     } catch (e: any) {
-      toast.error('Lỗi khi cập nhật trạng thái: ' + e.message);
+      toast.error("Lỗi khi cập nhật trạng thái: " + e.message);
     }
   };
 
   const handleCancelOrder = async () => {
     setIsCanceling(true);
     try {
-      const { error } = await supabase.from('orders').update({ status: 'Hủy' }).eq('orderid', id);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "Hủy" })
+        .eq("orderid", id);
       if (error) throw error;
 
-      setOrder({ ...order, status: 'Hủy' });
+      setOrder({ ...order, status: "Hủy" });
       setShowCancelModal(false);
 
-      if (order.paymentmethod === 'VNPAY') {
-        toast('Đã hủy đơn hàng. Số tiền bạn đã thanh toán qua VNPay sẽ được quán liên hệ hoàn trả trong vòng 24h.', {
-          duration: 5000,
-          position: 'bottom-center',
-          icon: 'ℹ️',
-          style: { background: '#fff0f4', color: '#d81b60', border: '1px solid #ffccd5', fontWeight: 600 }
-        });
+      if (order.paymentmethod === "VNPAY") {
+        toast(
+          "Đã hủy đơn hàng. Số tiền bạn đã thanh toán qua VNPay sẽ được quán liên hệ hoàn trả trong vòng 24h.",
+          {
+            duration: 5000,
+            position: "bottom-center",
+            icon: "ℹ️",
+            style: {
+              background: "#fff0f4",
+              color: "#d81b60",
+              border: "1px solid #ffccd5",
+              fontWeight: 600,
+            },
+          },
+        );
       } else {
-        toast.success('Đã hủy đơn hàng thành công');
+        toast.success("Đã hủy đơn hàng thành công");
       }
     } catch (e: any) {
-      toast.error('Lỗi khi hủy đơn hàng: ' + e.message);
+      toast.error("Lỗi khi hủy đơn hàng: " + e.message);
     } finally {
       setIsCanceling(false);
     }
@@ -114,25 +142,25 @@ const OrderTracking: React.FC = () => {
   const handleOpenReviewModal = () => {
     // 1. Đánh giá chung cho toàn bộ đơn hàng (productid = null)
     const generalReview = {
-      type: 'order',
+      type: "order",
       detailid: 0, // dummy
       productid: null,
       name: `Đánh giá Đơn hàng #${order.orderid}`,
       rating: 5,
-      comment: ''
+      comment: "",
     };
 
     // 2. Đánh giá cho từng sản phẩm (Group by productid)
     const productMap = new Map();
-    details.forEach(d => {
+    details.forEach((d) => {
       if (!productMap.has(d.productid)) {
         productMap.set(d.productid, {
-          type: 'product',
+          type: "product",
           detailid: d.orderdetailid,
           productid: d.productid,
           name: d.products?.name,
           rating: 5,
-          comment: ''
+          comment: "",
         });
       }
     });
@@ -144,12 +172,14 @@ const OrderTracking: React.FC = () => {
   };
 
   const handleUpdateReview = (index: number, key: string, value: any) => {
-    setReviewsData(prev => prev?.map((r, idx) => idx === index ? { ...r, [key]: value } : r));
+    setReviewsData((prev) =>
+      prev?.map((r, idx) => (idx === index ? { ...r, [key]: value } : r)),
+    );
   };
 
   const handleSubmitReview = async () => {
-    if (reviewsData.some(r => !r.comment.trim())) {
-      toast.error('Vui lòng nhập nhận xét đầy đủ.');
+    if (reviewsData.some((r) => !r.comment.trim())) {
+      toast.error("Vui lòng nhập nhận xét đầy đủ.");
       return;
     }
     setIsSubmittingReview(true);
@@ -160,9 +190,9 @@ const OrderTracking: React.FC = () => {
 
       // Quy đổi UUID sang CustomerID (int8)
       const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('customerid')
-        .eq('authid', authUserId)
+        .from("customers")
+        .select("customerid")
+        .eq("authid", authUserId)
         .single();
 
       if (customerError || !customerData) {
@@ -171,22 +201,22 @@ const OrderTracking: React.FC = () => {
 
       const customerId = customerData.customerid;
 
-      const payload = reviewsData?.map(r => ({
+      const payload = reviewsData?.map((r) => ({
         customerid: customerId,
         orderid: id,
         productid: r.productid,
         rating: r.rating,
         comment: r.comment,
-        createdat: new Date().toISOString()
+        createdat: new Date().toISOString(),
       }));
 
-      const { error } = await supabase.from('reviews').insert(payload);
+      const { error } = await supabase.from("reviews").insert(payload);
       if (error) throw error;
-      toast.success('Gửi đánh giá thành công! Cảm ơn bạn rất nhiều!');
+      toast.success("Gửi đánh giá thành công! Cảm ơn bạn rất nhiều!");
       setHasReviewed(true);
       setShowReviewModal(false);
     } catch (e: any) {
-      toast.error('Gửi đánh giá thất bại: ' + e.message);
+      toast.error("Gửi đánh giá thất bại: " + e.message);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -195,7 +225,10 @@ const OrderTracking: React.FC = () => {
   const handleReorder = async () => {
     setReorderLoading(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/reorder`, { orderid: id });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/orders/reorder`,
+        { orderid: id },
+      );
       if (res.data.success) {
         const { reorderCart, hasMissingItems } = res.data;
         let addedCount = 0;
@@ -205,58 +238,81 @@ const OrderTracking: React.FC = () => {
         });
 
         if (addedCount === 0) {
-          toast.error('Các món trong đơn hàng này đã ngừng bán.');
+          toast.error("Các món trong đơn hàng này đã ngừng bán.");
         } else {
           if (hasMissingItems) {
-            toast.success(`Đã thêm ${addedCount} món vào giỏ. Một số món đã ngừng phục vụ nên không được thêm.`);
+            toast.success(
+              `Đã thêm ${addedCount} món vào giỏ. Một số món đã ngừng phục vụ nên không được thêm.`,
+            );
           } else {
-            toast.success('Đã thêm các món từ đơn hàng cũ vào giỏ.');
+            toast.success("Đã thêm các món từ đơn hàng cũ vào giỏ.");
           }
-          setTimeout(() => navigate('/cart'), 1000);
+          setTimeout(() => navigate("/cart"), 1000);
         }
       }
     } catch (err: any) {
-      toast.error('Lỗi khi đặt lại đơn: ' + (err.response?.data?.error || err.message));
+      toast.error(
+        "Lỗi khi đặt lại đơn: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setReorderLoading(false);
     }
   };
 
   const getStepIndex = (status: string) => {
-    if (status === 'Hủy') return -1;
-    if (status === 'Chờ thanh toán') return -1;
+    if (status === "Hủy") return -1;
+    if (status === "Chờ thanh toán") return -1;
     const idx = STEPS.indexOf(status);
     return idx === -1 ? 0 : idx;
   };
 
-  if (loading) return <div className="tracking-page"><div className="loader"></div></div>;
-  if (!order) return <div className="tracking-page"><h2>Đơn hàng không tồn tại</h2></div>;
+  if (loading)
+    return (
+      <div className="tracking-page">
+        <div className="loader"></div>
+      </div>
+    );
+  if (!order)
+    return (
+      <div className="tracking-page">
+        <h2>Đơn hàng không tồn tại</h2>
+      </div>
+    );
 
   const currentStep = getStepIndex(order.status);
-  const isCanceled = order.status === 'Hủy';
-  const isPendingPay = order.status === 'Chờ thanh toán';
+  const isCanceled = order.status === "Hủy";
+  const isPendingPay = order.status === "Chờ thanh toán";
 
   return (
     <main className="tracking-page">
       <div className="tracking-card">
-        <Link to="/" className="back-link"><FiChevronLeft /> Quay lại trang chủ</Link>
+        <Link to="/" className="back-link">
+          <FiChevronLeft /> Quay lại trang chủ
+        </Link>
 
         <div className="tracking-header">
           <div>
             <h2>Đơn hàng #{order.orderid}</h2>
-            <p className="order-date">{new Date(order.orderdate).toLocaleString('vi-VN')}</p>
+            <p className="order-date">
+              {new Date(order.orderdate).toLocaleString("vi-VN")}
+            </p>
           </div>
-          <div className={`status-badge ${isCanceled ? 'canceled' : isPendingPay ? 'pending' : 'active'}`}>
+          <div
+            className={`status-badge ${isCanceled ? "canceled" : isPendingPay ? "pending" : "active"}`}
+          >
             {order.status}
           </div>
         </div>
 
-        {(!isCanceled && !isPendingPay) && (
+        {!isCanceled && !isPendingPay && (
           <div className="stepper-wrapper">
             {STEPS?.map((step, index) => {
               const isActive = index <= currentStep;
               return (
-                <div key={step} className={`stepper-item ${isActive ? 'active' : ''}`}>
+                <div
+                  key={step}
+                  className={`stepper-item ${isActive ? "active" : ""}`}
+                >
                   <div className="step-counter">
                     {isActive ? <FiCheck /> : index + 1}
                   </div>
@@ -267,18 +323,63 @@ const OrderTracking: React.FC = () => {
           </div>
         )}
 
+        {order.branches && (
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: "15px",
+              borderRadius: "12px",
+              marginTop: "20px",
+              marginBottom: "20px",
+              border: "1px solid #eee",
+            }}
+          >
+            <h4
+              style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#333" }}
+            >
+              📍 Địa chỉ cửa hàng xử lý
+            </h4>
+            <p
+              style={{
+                margin: "0",
+                fontSize: "15px",
+                color: "#333",
+                fontWeight: "500",
+              }}
+            >
+              {order.branches.name}
+            </p>
+            <p style={{ margin: "5px 0 0 0", fontSize: "13px", color: "#666" }}>
+              {order.branches.address}
+            </p>
+          </div>
+        )}
+
         <div className="order-items-list">
           <h3>Món đã đặt</h3>
           {details?.map((item) => (
             <div key={item.orderdetailid} className="tracking-item">
-              <img src={item.products?.imageurl || 'https://via.placeholder.com/60'} alt="product" />
+              <img
+                src={
+                  item.products?.imageurl || "https://via.placeholder.com/60"
+                }
+                alt="product"
+              />
               <div className="tracking-item-info">
-                <h4>{item.quantity}x {item.products?.name}</h4>
-                <p>Size {item.sizeid === 2 ? 'L' : 'M'}, {item.sugarlevel} Đường, {item.icelevel} Đá</p>
+                <h4>
+                  {item.quantity}x {item.products?.name}
+                </h4>
+                <p>
+                  Size {item.sizeid === 2 ? "L" : "M"}, {item.sugarlevel} Đường,{" "}
+                  {item.icelevel} Đá
+                </p>
                 {item.note && <p className="item-note">Lưu ý: {item.note}</p>}
               </div>
               <div className="tracking-item-price">
-                {(item.subtotal || item.priceatorder * item.quantity).toLocaleString('vi-VN')}đ
+                {(
+                  item.subtotal || item.priceatorder * item.quantity
+                ).toLocaleString("vi-VN")}
+                đ
               </div>
             </div>
           ))}
@@ -286,23 +387,59 @@ const OrderTracking: React.FC = () => {
 
         <div className="tracking-footer">
           <div className="total-row">
+            <span>Tạm tính</span>
+            <span>
+              {(
+                order.finalamount -
+                (order.shippingfee || 0) +
+                (order.discountamount || 0)
+              )?.toLocaleString("vi-VN")}
+              đ
+            </span>
+          </div>
+
+          {order.discountamount > 0 && (
+            <div
+              className="total-row"
+              style={{ color: "#d81b60", fontWeight: "bold" }}
+            >
+              <span>Voucher giảm giá</span>
+              <span>- {order.discountamount?.toLocaleString("vi-VN")}đ</span>
+            </div>
+          )}
+
+          {order.shippingfee > 0 && (
+            <div className="total-row">
+              <span>Phí giao hàng</span>
+              <span>{order.shippingfee?.toLocaleString("vi-VN")}đ</span>
+            </div>
+          )}
+
+          <div className="total-row">
             <span>Tổng thanh toán</span>
-            <span className="total-price">{order.finalamount?.toLocaleString('vi-VN')}đ</span>
+            <span className="total-price">
+              {order.finalamount?.toLocaleString("vi-VN")}đ
+            </span>
           </div>
 
           <button
             className="btn-received"
-            disabled={order.status !== 'Đang giao'}
+            disabled={order.status !== "Đang giao"}
             onClick={handleReceived}
           >
             ĐÃ NHẬN ĐƯỢC HÀNG
           </button>
 
-          {order.status !== 'Đang giao' && order.status !== 'Hoàn thành' && !isCanceled && (
-            <p className="received-hint">Bạn có thể xác nhận khi đơn hàng chuyển sang trạng thái "Đang giao".</p>
-          )}
+          {order.status !== "Đang giao" &&
+            order.status !== "Hoàn thành" &&
+            !isCanceled && (
+              <p className="received-hint">
+                Bạn có thể xác nhận khi đơn hàng chuyển sang trạng thái "Đang
+                giao".
+              </p>
+            )}
 
-          {order.status === 'Chờ xác nhận' && (
+          {order.status === "Chờ xác nhận" && (
             <button
               className="btn-cancel-order"
               onClick={() => setShowCancelModal(true)}
@@ -311,14 +448,25 @@ const OrderTracking: React.FC = () => {
             </button>
           )}
 
-          {order.status === 'Hoàn thành' && (
+          {order.status === "Hoàn thành" && (
             <button
               className="btn-review-order"
               disabled={hasReviewed}
               onClick={handleOpenReviewModal}
-              style={{ background: hasReviewed ? '#ccc' : '#d81b60', color: 'white', padding: '14px 20px', border: 'none', borderRadius: '12px', cursor: hasReviewed ? 'not-allowed' : 'pointer', fontWeight: 'bold', width: '100%', marginTop: '15px', fontFamily: 'Quicksand' }}
+              style={{
+                background: hasReviewed ? "#ccc" : "#d81b60",
+                color: "white",
+                padding: "14px 20px",
+                border: "none",
+                borderRadius: "12px",
+                cursor: hasReviewed ? "not-allowed" : "pointer",
+                fontWeight: "bold",
+                width: "100%",
+                marginTop: "15px",
+                fontFamily: "Quicksand",
+              }}
             >
-              {hasReviewed ? 'ĐÃ ĐÁNH GIÁ' : 'ĐÁNH GIÁ SẢN PHẨM'}
+              {hasReviewed ? "ĐÃ ĐÁNH GIÁ" : "ĐÁNH GIÁ SẢN PHẨM"}
             </button>
           )}
 
@@ -326,28 +474,53 @@ const OrderTracking: React.FC = () => {
             className="btn-reorder"
             disabled={reorderLoading}
             onClick={handleReorder}
-            style={{ background: '#fff0f4', color: '#d81b60', border: '1px solid #ffccd5', padding: '14px 20px', borderRadius: '12px', cursor: reorderLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold', width: '100%', marginTop: '15px', fontFamily: 'Quicksand' }}
+            style={{
+              background: "#fff0f4",
+              color: "#d81b60",
+              border: "1px solid #ffccd5",
+              padding: "14px 20px",
+              borderRadius: "12px",
+              cursor: reorderLoading ? "not-allowed" : "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              marginTop: "15px",
+              fontFamily: "Quicksand",
+            }}
           >
-            {reorderLoading ? 'ĐANG TẢI...' : 'ĐẶT LẠI ĐƠN NÀY'}
+            {reorderLoading ? "ĐANG TẢI..." : "ĐẶT LẠI ĐƠN NÀY"}
           </button>
         </div>
       </div>
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
-        <div className="cart-confirm-overlay" onClick={() => setShowCancelModal(false)}>
-          <div className="cart-confirm-modal" onClick={e => e.stopPropagation()}>
+        <div
+          className="cart-confirm-overlay"
+          onClick={() => setShowCancelModal(false)}
+        >
+          <div
+            className="cart-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Xác nhận hủy đơn</h3>
-            <p>Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.</p>
+            <p>
+              Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không
+              thể hoàn tác.
+            </p>
             <div className="confirm-modal-actions">
-              <button className="btn-cancel" onClick={() => setShowCancelModal(false)}>Không</button>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowCancelModal(false)}
+              >
+                Không
+              </button>
               <button
                 className="btn-confirm"
                 disabled={isCanceling}
                 onClick={handleCancelOrder}
-                style={{ background: '#c62828' }}
+                style={{ background: "#c62828" }}
               >
-                {isCanceling ? 'Đang xử lý...' : 'Đồng ý hủy'}
+                {isCanceling ? "Đang xử lý..." : "Đồng ý hủy"}
               </button>
             </div>
           </div>
@@ -356,48 +529,114 @@ const OrderTracking: React.FC = () => {
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="cart-confirm-overlay" onClick={() => setShowReviewModal(false)}>
-          <div className="cart-confirm-modal review-modal" onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '15px' }}>Đánh giá Đơn hàng #{order.orderid}</h3>
+        <div
+          className="cart-confirm-overlay"
+          onClick={() => setShowReviewModal(false)}
+        >
+          <div
+            className="cart-confirm-modal review-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "90%",
+              maxWidth: "600px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <h3
+              style={{ borderBottom: "1px solid #eee", paddingBottom: "15px" }}
+            >
+              Đánh giá Đơn hàng #{order.orderid}
+            </h3>
 
-            <div className="review-items-container" style={{ textAlign: 'left', marginTop: '20px' }}>
+            <div
+              className="review-items-container"
+              style={{ textAlign: "left", marginTop: "20px" }}
+            >
               {reviewsData?.map((rev, index) => (
-                <div key={index} className="review-item-box" style={{ marginBottom: '25px', paddingBottom: '20px', borderBottom: index < reviewsData.length - 1 ? '1px dashed #ccc' : 'none' }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: rev.productid ? '#d81b60' : '#222', fontSize: rev.productid ? '16px' : '18px' }}>
+                <div
+                  key={index}
+                  className="review-item-box"
+                  style={{
+                    marginBottom: "25px",
+                    paddingBottom: "20px",
+                    borderBottom:
+                      index < reviewsData.length - 1
+                        ? "1px dashed #ccc"
+                        : "none",
+                  }}
+                >
+                  <h4
+                    style={{
+                      margin: "0 0 10px 0",
+                      color: rev.productid ? "#d81b60" : "#222",
+                      fontSize: rev.productid ? "16px" : "18px",
+                    }}
+                  >
                     {rev.productid ? `Món ăn: ${rev.name}` : rev.name}
                   </h4>
 
-                  <div className="star-rating" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                    {[1, 2, 3, 4, 5]?.map(star => (
+                  <div
+                    className="star-rating"
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    {[1, 2, 3, 4, 5]?.map((star) => (
                       <FaStar
                         key={star}
                         size={28}
                         color={star <= rev.rating ? "#ffc107" : "#e4e5e9"}
-                        style={{ cursor: 'pointer', transition: 'color 0.2s' }}
-                        onClick={() => handleUpdateReview(index, 'rating', star)}
+                        style={{ cursor: "pointer", transition: "color 0.2s" }}
+                        onClick={() =>
+                          handleUpdateReview(index, "rating", star)
+                        }
                       />
                     ))}
                   </div>
 
                   <textarea
                     rows={3}
-                    placeholder={rev.productid ? "Nhập nhận xét của bạn về món này..." : "Nhập nhận xét chung về chất lượng phục vụ và đơn hàng..."}
+                    placeholder={
+                      rev.productid
+                        ? "Nhập nhận xét của bạn về món này..."
+                        : "Nhập nhận xét chung về chất lượng phục vụ và đơn hàng..."
+                    }
                     value={rev.comment}
-                    onChange={(e) => handleUpdateReview(index, 'comment', e.target.value)}
-                    style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '10px', fontFamily: 'inherit', resize: 'vertical' }}
+                    onChange={(e) =>
+                      handleUpdateReview(index, "comment", e.target.value)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
                   />
                 </div>
               ))}
             </div>
 
-            <div className="confirm-modal-actions" style={{ marginTop: '20px' }}>
-              <button className="btn-cancel" onClick={() => setShowReviewModal(false)}>Trở về</button>
+            <div
+              className="confirm-modal-actions"
+              style={{ marginTop: "20px" }}
+            >
+              <button
+                className="btn-cancel"
+                onClick={() => setShowReviewModal(false)}
+              >
+                Trở về
+              </button>
               <button
                 className="btn-confirm"
                 disabled={isSubmittingReview}
                 onClick={handleSubmitReview}
               >
-                {isSubmittingReview ? 'Đang gửi...' : 'Gửi Đánh Giá'}
+                {isSubmittingReview ? "Đang gửi..." : "Gửi Đánh Giá"}
               </button>
             </div>
           </div>

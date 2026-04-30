@@ -559,6 +559,7 @@ app.post("/api/checkout", async (req, res) => {
       paymentMethod,
       status,
       isDelivery,
+      isAutoRouting,
       customerInfo,
       voucherId,
       discountAmount,
@@ -583,42 +584,115 @@ app.post("/api/checkout", async (req, res) => {
       }
 
       const requiredIngredients = await calculateIngredients(cart, supabase);
-      branchId = customerInfo.deliveryBranchId;
-      if (!branchId)
-        return res
-          .status(400)
-          .json({ error: "Vui lòng chọn chi nhánh giao hàng." });
 
-      const { data: bInfo } = await supabase
-        .from("branches")
-        .select("*")
-        .eq("branchid", branchId)
-        .single();
-      if (!bInfo)
-        return res
-          .status(400)
-          .json({ error: "Chi nhánh giao hàng không tồn tại." });
+      // ===== AUTO ROUTING MODE =====
+      if (isAutoRouting || customerInfo.deliveryBranchId === "auto-routing") {
+        const { data: allBranches } = await supabase
+          .from("branches")
+          .select("*")
+          .eq("isactive", true);
 
-      const matrixResult = await getGoongDistanceMatrix(targetLat, targetLng, [
-        bInfo,
-      ]);
-      const distance =
-        matrixResult.length > 0 ? matrixResult[0].distanceKm : Infinity;
+        const distanceResults = await getGoongDistanceMatrix(
+          targetLat,
+          targetLng,
+          allBranches,
+        );
 
-      if (distance === Infinity) {
-        return res.status(400).json({
-          error: "Không thể định tuyến đường đi bằng xe máy tới địa điểm này.",
-        });
+        let bestBranchId = null;
+        let bestShippingFee = 0;
+
+        // Priority 1: Available + Not Overloaded
+        for (const dr of distanceResults) {
+          const b = dr.branch;
+          const distance = dr.distanceKm;
+          if (distance <= 15 && distance !== Infinity) {
+            const capability = await checkBranchCapability(
+              b.branchid,
+              cart,
+              requiredIngredients,
+              supabase,
+            );
+            if (capability.available && !capability.isOverloaded) {
+              bestBranchId = b.branchid;
+              bestShippingFee = calculateShippingFee(distance);
+              break; // Found best, stop searching
+            }
+          }
+        }
+
+        // Priority 2: Available but Overloaded (fallback)
+        if (!bestBranchId) {
+          for (const dr of distanceResults) {
+            const b = dr.branch;
+            const distance = dr.distanceKm;
+            if (distance <= 15 && distance !== Infinity) {
+              const capability = await checkBranchCapability(
+                b.branchid,
+                cart,
+                requiredIngredients,
+                supabase,
+              );
+              if (capability.available) {
+                bestBranchId = b.branchid;
+                bestShippingFee = calculateShippingFee(distance);
+                break;
+              }
+            }
+          }
+        }
+
+        if (!bestBranchId) {
+          return res.status(400).json({
+            error:
+              "Rất tiếc, không có chi nhánh nào khả dụng phục vụ địa chỉ này. Vui lòng chọn thủ công hoặc liên hệ với chúng tôi.",
+          });
+        }
+
+        branchId = bestBranchId;
+        shippingFee = bestShippingFee;
+      } else {
+        // ===== MANUAL SELECTION MODE =====
+        branchId = parseInt(customerInfo.deliveryBranchId);
+        if (!branchId || isNaN(branchId))
+          return res
+            .status(400)
+            .json({ error: "Vui lòng chọn chi nhánh giao hàng." });
+
+        const { data: bInfo } = await supabase
+          .from("branches")
+          .select("*")
+          .eq("branchid", branchId)
+          .single();
+        if (!bInfo)
+          return res
+            .status(400)
+            .json({ error: "Chi nhánh giao hàng không tồn tại." });
+
+        const matrixResult = await getGoongDistanceMatrix(
+          targetLat,
+          targetLng,
+          [bInfo],
+        );
+        const distance =
+          matrixResult.length > 0 ? matrixResult[0].distanceKm : Infinity;
+
+        if (distance === Infinity) {
+          return res.status(400).json({
+            error:
+              "Không thể định tuyến đường đi bằng xe máy tới địa điểm này.",
+          });
+        }
+
+        shippingFee = calculateShippingFee(distance);
+        if (shippingFee === -1) {
+          return res.status(400).json({
+            error:
+              "Rất tiếc, khoảng cách giao hàng trên 15km Lam Trà không thể phục vụ.",
+          });
+        }
       }
 
-      shippingFee = calculateShippingFee(distance);
-      if (shippingFee === -1) {
-        return res.status(400).json({
-          error:
-            "Rất tiếc, khoảng cách giao hàng trên 15km Lam Trà không thể phục vụ.",
-        });
-      }
-
+      // Verify selected branch capability (for both modes)
       const capability = await checkBranchCapability(
         branchId,
         cart,

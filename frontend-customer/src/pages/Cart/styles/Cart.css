@@ -486,26 +486,96 @@
   }
 }
 
+.branch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.branch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.branch-item:hover:not(.disabled) {
+  border-color: #d81b60;
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
+}
+
+.branch-item.selected {
+  border: 2px solid #d81b60;
+  background: #fff0f4;
+}
+
 .branch-item.disabled {
   background-color: #f8f8f8;
   cursor: not-allowed;
-  color: #aaa;
+  opacity: 0.6;
 }
 
-.branch-item.disabled .branch-name,
-.branch-item.disabled .branch-fee {
-  color: #bbb;
-  text-decoration: line-through;
+.branch-info {
+  flex: 1;
+}
+
+.branch-name {
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  color: #333;
+  font-size: 15px;
+}
+
+.branch-distance {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.branch-status-available,
+.branch-status-overload,
+.branch-status-unavailable {
+  display: inline-block;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.branch-status-available {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.branch-status-overload {
+  background: #fff3e0;
+  color: #e65100;
 }
 
 .branch-status-unavailable {
-  font-size: 0.8rem;
-  color: #e74c3c;
+  background: #ffebee;
+  color: #c62828;
   font-style: italic;
 }
 
+.branch-fee {
+  margin: 0;
+  color: #d81b60;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  margin-left: 20px;
+}
+
 .auto-select-container {
-  margin-top: 20px;
+  margin-top: 15px;
   text-align: center;
 }
 
