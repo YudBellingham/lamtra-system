@@ -10,6 +10,7 @@ import {
   FiArrowLeft,
   FiTag,
   FiInfo,
+  FiZap,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { supabase } from "../../lib/supabase";
@@ -30,6 +31,25 @@ const Cart: React.FC = () => {
   const [isCheckout, setIsCheckout] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleAutoSelectBranch = () => {
+    if (deliveryBranchesInfo && deliveryBranchesInfo.length > 0) {
+      const bestBranch = deliveryBranchesInfo.find(
+        (b) => b.capability.available && !b.capability.isOverloaded,
+      );
+
+      if (bestBranch) {
+        setSelectedDeliveryBranchId(bestBranch.branch.branchid);
+        setShippingFee(bestBranch.shippingFee);
+        setShippingDistance(bestBranch.distance);
+        toast.success(`Đã tự động chọn: ${bestBranch.branch.name}`);
+      } else {
+        toast.error(
+          "Tất cả các chi nhánh phù hợp đều đang quá tải hoặc hết hàng.",
+        );
+      }
+    }
+  };
 
   const [orderType, setOrderType] = useState("Giao hàng");
 
@@ -982,6 +1002,125 @@ const Cart: React.FC = () => {
                 </div>
               )}
 
+              {orderType === "Giao hàng" && deliveryBranchesInfo.length > 0 && (
+                <div
+                  className="delivery-branch-options"
+                  style={{
+                    marginTop: "20px",
+                    padding: "15px",
+                    background: "#f8f9fa",
+                    borderRadius: "12px",
+                    border: "1px solid #eee",
+                  }}
+                >
+                  <h3
+                    style={{
+                      marginTop: 0,
+                      marginBottom: "15px",
+                      fontSize: "16px",
+                    }}
+                  >
+                    Tùy chọn chi nhánh phục vụ
+                  </h3>
+                  <div className="branch-list">
+                    {deliveryBranchesInfo?.map((b) => (
+                      <div
+                        key={b.branch.branchid}
+                        className={`branch-item ${
+                          selectedDeliveryBranchId === b.branch.branchid
+                            ? "selected"
+                            : ""
+                        } ${!b.capability.available ? "disabled" : ""}`}
+                        onClick={() => {
+                          if (b.capability.available) {
+                            setSelectedDeliveryBranchId(b.branch.branchid);
+                            setShippingFee(b.shippingFee);
+                            setShippingDistance(b.distance);
+                          }
+                        }}
+                      >
+                        <div className="branch-info">
+                          <p className="branch-name">
+                            {b.branch.name}
+                            <span className="branch-distance">
+                              ({b.distance.toFixed(1)}km)
+                            </span>
+                          </p>
+                          {!b.capability.available ? (
+                            <span className="branch-status-unavailable">
+                              Hết hàng: {b.capability.outOfStockItems.join(", ")}
+                            </span>
+                          ) : b.capability.isOverloaded ? (
+                            <span className="branch-status-overload">
+                              Quá tải (Đợi {b.capability.estimatedTime})
+                            </span>
+                          ) : (
+                            <span className="branch-status-available">
+                              Sẵn sàng
+                            </span>
+                          )}
+                        </div>
+                        <p className="branch-fee">
+                          {b.shippingFee.toLocaleString()}đ Ship
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="auto-select-container">
+                    <button
+                      type="button"
+                      onClick={handleAutoSelectBranch}
+                      className="auto-select-btn"
+                    >
+                      <FiZap style={{ marginRight: "8px" }} />
+                      Tự động chọn chi nhánh tốt nhất
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="checkout-group" style={{ marginTop: "15px" }}>
+                <label>Ghi chú toàn đơn hàng</label>
+                <textarea
+                  placeholder="Ghi chú (Ví dụ: Gọi điện trước khi giao, giao giờ hành chính...)"
+                  rows={2}
+                  value={orderNote}
+                  onChange={(e) => setOrderNote(e.target.value)}
+                ></textarea>
+              </div>
+
+              <h2 className="checkout-heading" style={{ marginTop: "20px" }}>
+                Phương thức thanh toán
+              </h2>
+              <div className="payment-methods">
+                <label
+                  className={`payment-option ${formData.paymentMethod === "COD" ? "active" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    value="COD"
+                    checked={formData.paymentMethod === "COD"}
+                    onChange={() =>
+                      setFormData({ ...formData, paymentMethod: "COD" })
+                    }
+                  />
+                  <span>Thanh toán khi nhận hàng (COD)</span>
+                </label>
+                <label
+                  className={`payment-option ${formData.paymentMethod === "VNPAY" ? "active" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    value="VNPAY"
+                    checked={formData.paymentMethod === "VNPAY"}
+                    onChange={() =>
+                      setFormData({ ...formData, paymentMethod: "VNPAY" })
+                    }
+                  />
+                  <span>Ví VNPay / Thẻ ATM Trực tuyến</span>
+                </label>
+              </div>
+              
               {orderType === "Giao hàng" && deliveryBranchesInfo.length > 0 && (
                 <div
                   className="delivery-branch-options"
