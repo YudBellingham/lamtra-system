@@ -94,6 +94,7 @@ const Cart: React.FC = () => {
   const [selectedDeliveryBranchId, setSelectedDeliveryBranchId] = useState<
     number | string
   >("");
+  const [isAutoRouting, setIsAutoRouting] = useState(false);
 
   // Branches
   const [branches, setBranches] = useState<any[]>([]);
@@ -318,6 +319,7 @@ const Cart: React.FC = () => {
       setIsCalculatingShipping(true);
       setShippingError("");
       setFallbackLevelWarning("");
+      setIsAutoRouting(false); // Reset auto routing when recalculating
 
       if (!lat) {
         setShippingDistance(null);
@@ -469,9 +471,9 @@ const Cart: React.FC = () => {
         toast.error("Vui lòng kiểm tra lại địa chỉ giao nhận.");
         return;
       }
-      if (!selectedDeliveryBranchId) {
+      if (!selectedDeliveryBranchId && !isAutoRouting) {
         toast.error(
-          "Vui lòng chờ tính phí hoặc chọn chi nhánh giao hàng khả dụng.",
+          "Vui lòng chọn chi nhánh giao hàng hoặc cho hệ thống tự đẩy đơn.",
         );
         return;
       }
@@ -521,6 +523,7 @@ const Cart: React.FC = () => {
         paymentMethod: formData.paymentMethod,
         status: statusToSave,
         isDelivery: orderType === "Giao hàng",
+        isAutoRouting: isAutoRouting,
         orderNote: orderNote,
         customerInfo: {
           fullName: formData.fullName,
@@ -531,7 +534,7 @@ const Cart: React.FC = () => {
             : formData.address_detail,
           exactLat: exactCoords ? exactCoords[0] : null,
           exactLng: exactCoords ? exactCoords[1] : null,
-          deliveryBranchId: selectedDeliveryBranchId,
+          deliveryBranchId: isAutoRouting ? null : selectedDeliveryBranchId,
         },
       };
 
@@ -1066,12 +1069,60 @@ const Cart: React.FC = () => {
                         </p>
                       </div>
                     ))}
+                    <div
+                      key="auto-routing-option"
+                      className={`branch-item ${isAutoRouting ? "selected" : ""}`}
+                      onClick={() => {
+                        setIsAutoRouting(!isAutoRouting);
+                        if (!isAutoRouting) {
+                          setSelectedDeliveryBranchId("");
+                          toast.success(
+                            "Để hệ thống tự động đẩy đơn đến chi nhánh phù hợp nhất!",
+                          );
+                        } else {
+                          toast("Đã hủy chế độ tự động routing.");
+                        }
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        backgroundColor: isAutoRouting ? "#ffebf3" : "#f9f9f9",
+                        borderColor: isAutoRouting ? "#d81b60" : "#ddd",
+                        borderWidth: isAutoRouting ? "2px" : "1px",
+                      }}
+                    >
+                      <div className="branch-info">
+                        <p className="branch-name" style={{ color: "#d81b60" }}>
+                          <FiZap
+                            style={{
+                              marginRight: "8px",
+                              verticalAlign: "middle",
+                            }}
+                          />
+                          Để hệ thống tự đẩy đơn
+                        </p>
+                        <span
+                          className="branch-status-available"
+                          style={{
+                            background: "#d81b60",
+                            color: "white",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ✨ Smart Routing
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
                   <div className="auto-select-container">
                     <button
                       type="button"
                       onClick={handleAutoSelectBranch}
                       className="auto-select-btn"
+                      disabled={isAutoRouting}
                     >
                       <FiZap style={{ marginRight: "8px" }} />
                       Tự động chọn chi nhánh tốt nhất
