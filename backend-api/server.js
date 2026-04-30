@@ -586,7 +586,7 @@ app.post("/api/checkout", async (req, res) => {
       const requiredIngredients = await calculateIngredients(cart, supabase);
 
       // ===== AUTO ROUTING MODE =====
-      if (isAutoRouting && !customerInfo.deliveryBranchId) {
+      if (isAutoRouting || customerInfo.deliveryBranchId === "auto-routing") {
         const { data: allBranches } = await supabase
           .from("branches")
           .select("*")
@@ -652,8 +652,8 @@ app.post("/api/checkout", async (req, res) => {
         shippingFee = bestShippingFee;
       } else {
         // ===== MANUAL SELECTION MODE =====
-        branchId = customerInfo.deliveryBranchId;
-        if (!branchId)
+        branchId = parseInt(customerInfo.deliveryBranchId);
+        if (!branchId || isNaN(branchId))
           return res
             .status(400)
             .json({ error: "Vui lòng chọn chi nhánh giao hàng." });

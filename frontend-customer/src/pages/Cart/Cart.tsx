@@ -471,7 +471,7 @@ const Cart: React.FC = () => {
         toast.error("Vui lòng kiểm tra lại địa chỉ giao nhận.");
         return;
       }
-      if (!selectedDeliveryBranchId && !isAutoRouting) {
+      if (!selectedDeliveryBranchId) {
         toast.error(
           "Vui lòng chọn chi nhánh giao hàng hoặc cho hệ thống tự đẩy đơn.",
         );
@@ -534,7 +534,7 @@ const Cart: React.FC = () => {
             : formData.address_detail,
           exactLat: exactCoords ? exactCoords[0] : null,
           exactLng: exactCoords ? exactCoords[1] : null,
-          deliveryBranchId: isAutoRouting ? null : selectedDeliveryBranchId,
+          deliveryBranchId: selectedDeliveryBranchId,
         },
       };
 
@@ -1033,13 +1033,18 @@ const Cart: React.FC = () => {
                           selectedDeliveryBranchId === b.branch.branchid
                             ? "selected"
                             : ""
-                        } ${!b.capability.available ? "disabled" : ""}`}
+                        } ${!b.capability.available ? "disabled" : ""} ${isAutoRouting ? "disabled" : ""}`}
                         onClick={() => {
-                          if (b.capability.available) {
+                          if (b.capability.available && !isAutoRouting) {
                             setSelectedDeliveryBranchId(b.branch.branchid);
+                            setIsAutoRouting(false);
                             setShippingFee(b.shippingFee);
                             setShippingDistance(b.distance);
                           }
+                        }}
+                        style={{
+                          opacity: isAutoRouting ? 0.5 : 1,
+                          cursor: isAutoRouting ? "not-allowed" : "pointer",
                         }}
                       >
                         <div className="branch-info">
@@ -1073,13 +1078,16 @@ const Cart: React.FC = () => {
                       key="auto-routing-option"
                       className={`branch-item ${isAutoRouting ? "selected" : ""}`}
                       onClick={() => {
-                        setIsAutoRouting(!isAutoRouting);
                         if (!isAutoRouting) {
-                          setSelectedDeliveryBranchId("");
+                          setIsAutoRouting(true);
+                          setSelectedDeliveryBranchId("auto-routing");
+                          setShippingFee(0);
                           toast.success(
                             "Để hệ thống tự động đẩy đơn đến chi nhánh phù hợp nhất!",
                           );
                         } else {
+                          setIsAutoRouting(false);
+                          setSelectedDeliveryBranchId("");
                           toast("Đã hủy chế độ tự động routing.");
                         }
                       }}
@@ -1092,26 +1100,10 @@ const Cart: React.FC = () => {
                     >
                       <div className="branch-info">
                         <p className="branch-name" style={{ color: "#d81b60" }}>
-                          <FiZap
-                            style={{
-                              marginRight: "8px",
-                              verticalAlign: "middle",
-                            }}
-                          />
                           Để hệ thống tự đẩy đơn
                         </p>
-                        <span
-                          className="branch-status-available"
-                          style={{
-                            background: "#d81b60",
-                            color: "white",
-                            padding: "2px 8px",
-                            borderRadius: "12px",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          ✨ Smart Routing
+                        <span className="branch-status-available">
+                          Hệ thống sẽ chọn chi nhánh tốt nhất
                         </span>
                       </div>
                     </div>
