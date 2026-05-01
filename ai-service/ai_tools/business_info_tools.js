@@ -16,7 +16,7 @@ function getBusinessPolicy(type, params = {}) {
               { tier: "Hạng Bạc", min_points: 100, discount: "2%" },
               { tier: "Hạng Vàng", min_points: 500, discount: "5%" },
             ],
-            earning: "100k = 200 điểm",
+            earning: "10k = 1 điểm",
             join: "Miễn phí trên app/website",
           },
         };

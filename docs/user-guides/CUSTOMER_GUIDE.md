@@ -235,7 +235,7 @@ Chờ xác nhận → Đã xác nhận → Đang chuẩn bị
 
 ### Tích điểm
 
-- **Cứ mua 100k = 200 điểm**
+- **Cứ mua 10k = 1 điểm**
 - Điểm được cộng tự động sau khi đơn **hoàn thành**
 
 ### Hạng thành viên
