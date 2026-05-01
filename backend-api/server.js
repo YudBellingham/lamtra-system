@@ -773,16 +773,27 @@ app.post("/api/checkout", async (req, res) => {
 
     if (orderError) throw orderError;
 
-    const orderDetails = cart?.map((item) => ({
-      orderid: orderId,
-      productid: item.productid,
-      quantity: item.quantity,
-      sugarlevel: item.sugar,
-      icelevel: item.ice,
-      priceatorder: item.baseprice,
-      subtotal: item.itemTotal * item.quantity,
-      note: item.note || "",
-    }));
+    // Map size name to sizeid (M=1, L=2)
+    const getSizeId = (sizeName) => {
+      const sizeMap = { M: 1, L: 2 };
+      return sizeMap[sizeName] || 1;
+    };
+
+    const orderDetails = cart?.map((item) => {
+      // Calculate price per item (including size upcharge but divided by quantity for per-unit price)
+      const pricePerUnit = Math.round(item.itemTotal);
+      return {
+        orderid: orderId,
+        productid: item.productid,
+        sizeid: getSizeId(item.size),
+        quantity: item.quantity,
+        sugarlevel: item.sugar,
+        icelevel: item.ice,
+        priceatorder: pricePerUnit,
+        subtotal: item.itemTotal * item.quantity,
+        note: item.note || "",
+      };
+    });
 
     const { error: detailError } = await supabase
       .from("orderdetails")
@@ -871,6 +882,12 @@ app.post("/api/orders/reorder", async (req, res) => {
     let hasMissingItems = false;
     const reorderCart = [];
 
+    // Helper: Convert sizeid to size name
+    const getSizeName = (sizeId) => {
+      const sizeMap = { 1: "M", 2: "L" };
+      return sizeMap[sizeId] || "M";
+    };
+
     for (const od of orderDetails) {
       const product = availableProducts.find(
         (p) => p.productid === od.productid,
@@ -914,7 +931,7 @@ app.post("/api/orders/reorder", async (req, res) => {
         imageurl: product.imageurl,
         baseprice: priceToUse,
         quantity: od.quantity,
-        size: "M",
+        size: getSizeName(od.sizeid),
         sugar: od.sugarlevel || "100%",
         ice: od.icelevel || "100%",
         toppings: validToppings,
