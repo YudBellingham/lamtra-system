@@ -795,10 +795,40 @@ app.post("/api/checkout", async (req, res) => {
       };
     });
 
-    const { error: detailError } = await supabase
+    // Insert orderdetails and get back the inserted records with orderdetailid
+    const { data: insertedDetails, error: detailError } = await supabase
       .from("orderdetails")
-      .insert(orderDetails);
+      .insert(orderDetails)
+      .select();
     if (detailError) throw detailError;
+
+    // Insert toppings if any
+    if (insertedDetails && insertedDetails.length > 0) {
+      const orderToppings = [];
+
+      for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        const detailRecord = insertedDetails[i];
+
+        if (item.toppings && item.toppings.length > 0) {
+          for (const topping of item.toppings) {
+            orderToppings.push({
+              orderdetailid: detailRecord.orderdetailid,
+              toppingid: topping.toppingid,
+              quantity: topping.quantity || 1,
+              priceatorder: topping.price,
+            });
+          }
+        }
+      }
+
+      if (orderToppings.length > 0) {
+        const { error: toppingError } = await supabase
+          .from("ordertoppings")
+          .insert(orderToppings);
+        if (toppingError) throw toppingError;
+      }
+    }
 
     if (voucherId && customerId) {
       await supabase
