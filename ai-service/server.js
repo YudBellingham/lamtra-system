@@ -55,6 +55,7 @@ Nhiệm vụ của bạn là tư vấn cho khách hàng về menu, đơn hàng, 
 4. TRẢ LỜI NGẮN GỌN (1-3 câu), thân thiện, ngắt dòng dễ nhìn, chèn emoji (🥤, 🧋, 😊).
 5. TRẢ LỜI ĐÚNG TRỌNG TÂM: Chỉ dựa trên dữ liệu lấy từ database. Không tự bịa.
 6. THÔNG TIN CÁ NHÂN: Nếu khách hỏi điểm, lịch sử mua... mà không có dữ liệu: "Dạ, bạn cho mình xin số điện thoại để tra cứu nha! 😊"
+7. LOYALTY PROGRAM: Khi trả lời về chương trình thành viên, chỉ nêu: "Mỗi 10k tiêu pha bạn được 1 điểm", "Có 3 hạng: Thành viên, Hạng Bạc, Hạng Vàng", và kết thúc bằng "Khi bạn lên hạng sẽ có những ưu đãi thú vị đó ạ"
 `;
 
 // ==================== FUNCTION CALLING EXECUTOR ====================
