@@ -12,12 +12,13 @@ function getBusinessPolicy(type, params = {}) {
           data: {
             program: "Chương Trình Thành Viên Lam Trà",
             tiers: [
-              { tier: "Thành viên", min_points: 0, discount: "0%" },
-              { tier: "Hạng Bạc", min_points: 100, discount: "2%" },
-              { tier: "Hạng Vàng", min_points: 500, discount: "5%" },
+              { tier: "Thành viên", min_points: 0 },
+              { tier: "Hạng Bạc", min_points: 100 },
+              { tier: "Hạng Vàng", min_points: 500 },
             ],
             earning: "10k = 1 điểm",
             join: "Miễn phí trên app/website",
+            benefit: "Khi bạn lên hạng sẽ có những ưu đãi thú vị đó ạ",
           },
         };
       }
