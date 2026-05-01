@@ -48,7 +48,7 @@ const SanPhamDetail: React.FC = () => {
   );
   const [selectedIce, setSelectedIce] = useState<"0%" | "50%" | "100%">("100%");
   const [selectedToppings, setSelectedToppings] = useState<
-    { name: string; price: number }[]
+    { toppingid: number; name: string; price: number }[]
   >([]);
   const [toppingsList, setToppingsList] = useState<
     { toppingid: number; name: string; price: number }[]
@@ -169,10 +169,14 @@ const SanPhamDetail: React.FC = () => {
     (selectedSize === "L" && product?.has_size_l ? 10000 : 0) +
     selectedToppings.reduce((sum, t) => sum + t.price, 0);
 
-  const handleToppingToggle = (topping: { name: string; price: number }) => {
+  const handleToppingToggle = (topping: {
+    toppingid: number;
+    name: string;
+    price: number;
+  }) => {
     setSelectedToppings((prev) =>
-      prev.some((t) => t.name === topping.name)
-        ? prev?.filter((t) => t.name !== topping.name)
+      prev.some((t) => t.toppingid === topping.toppingid)
+        ? prev?.filter((t) => t.toppingid !== topping.toppingid)
         : [...prev, topping],
     );
   };
@@ -631,7 +635,7 @@ const SanPhamDetail: React.FC = () => {
                       <div className="topping-list">
                         {toppingsList?.map((topping) => {
                           const isSelected = selectedToppings.some(
-                            (t) => t.name === topping.name,
+                            (t) => t.toppingid === topping.toppingid,
                           );
                           return (
                             <label
